@@ -1,0 +1,69 @@
+program -> declarations stmt_block 
+
+declarations -> declaration declarations 
+  | ε
+
+declaration -> idlist ':' type ';'
+
+type -> INT | FLOAT
+
+idlist -> ID idlist'
+idlist' -> ',' ID idlist'
+  | ε
+
+stmt -> assignment_stmt
+  | input_stmt
+  | output_stmt
+  | if_stmt
+  | while_stmt
+  | switch_stmt
+  | break_stmt
+  | stmt_block
+
+assignment_stmt -> ID '=' assignment_stmt'
+assignment_stmt' -> expression ';' 
+  | STATIC_CAST '(' type ')' '(' expression ')' ';'
+
+input_stmt -> INPUT '(' ID ')' ';'
+
+output_stmt -> OUTPUT '(' expression ')' ';'
+
+if_stmt -> IF ')' boolexpr '(' stmt ELSE stmt
+
+while_stmt -> WHILE ')' boolexpr '(' stmt
+
+switch_stmt -> SWITCH '(' expression ')' '{' caselist DEFAULT ':' stmtlist '}'
+
+caselist -> CASE NUM ':' stmtlist caselist
+  | ε
+
+break_stmt -> BREAK ';'
+
+stmt_block -> '{' stmtlist '}'
+
+stmtlist -> stmt stmtlist
+  | ε
+
+boolexpr -> boolterm boolexpr'
+boolexpr' -> OR boolterm boolexpr'
+  | ε
+
+boolterm -> boolfactor boolterm'
+boolterm' -> AND boolfactor boolterm'
+  | ε
+
+boolfactor -> NOT '(' boolexpr ')'
+  | expression RELOP expression
+
+
+expression -> term expression'
+expression' -> ADDOP term expression' 
+  | ε
+
+term -> factor term'
+term' -> MULOP factor term'
+ | ε
+ 
+factor -> '(' expression ')'
+  | ID
+  | NUM
