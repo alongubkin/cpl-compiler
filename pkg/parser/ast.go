@@ -4,6 +4,8 @@ package parser
 type DataType int
 
 const (
+	// Unknown primitive data type.
+	Unknown DataType = iota
 	// Float means the data type is a float.
 	Float DataType = 1
 	// Integer means the data type is an integer.
@@ -19,7 +21,7 @@ type Node interface {
 }
 
 type Program struct {
-	declarations []Declaration
+	Declarations []Declaration
 }
 
 type Declaration struct {

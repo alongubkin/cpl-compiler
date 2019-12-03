@@ -1,15 +1,12 @@
 program -> declarations stmt_block 
 
-declarations -> declaration declarations 
-  | ε
-
+declarations -> declaration declarations | ε
 declaration -> idlist ':' type ';'
 
 type -> INT | FLOAT
 
 idlist -> ID idlist'
-idlist' -> ',' ID idlist'
-  | ε
+idlist' -> ',' ID idlist' | ε
 
 stmt -> assignment_stmt
   | input_stmt

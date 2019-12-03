@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/alongubkin/cpl-compiler/pkg/lexer"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestScannerOneCharacter(t *testing.T) {
@@ -178,54 +179,44 @@ func TestScannerPosition(t *testing.T) {
 	s := lexer.NewScanner(strings.NewReader(input))
 
 	hello := assertToken(t, s, lexer.ID, "hello")
-	if hello.Position.Line != 0 || hello.Position.Column != 0 {
-		t.Errorf("Invalid `hello` position - Ln %d, Col %d", hello.Position.Line, hello.Position.Column)
-	}
+	assert.Truef(t, hello.Position.Line == 0 && hello.Position.Column == 0,
+		"Invalid `hello` position - Ln %d, Col %d", hello.Position.Line, hello.Position.Column)
 
 	world := assertToken(t, s, lexer.ID, "world")
-	if world.Position.Line != 1 || world.Position.Column != 2 {
-		t.Errorf("Invalid `world` position - Ln %d, Col %d", world.Position.Line, world.Position.Column)
-	}
+	assert.Truef(t, world.Position.Line == 1 && world.Position.Column == 2,
+		"Invalid `world` position - Ln %d, Col %d", world.Position.Line, world.Position.Column)
 
 	test := assertToken(t, s, lexer.ID, "test")
-	if test.Position.Line != 2 || test.Position.Column != 0 {
-		t.Errorf("Invalid `test` position - Ln %d, Col %d", test.Position.Line, test.Position.Column)
-	}
+	assert.Truef(t, test.Position.Line == 2 && test.Position.Column == 0,
+		"Invalid `test` position - Ln %d, Col %d", test.Position.Line, test.Position.Column)
 
 	pi := assertToken(t, s, lexer.NUM, "3.14")
-	if pi.Position.Line != 2 || pi.Position.Column != 5 {
-		t.Errorf("Invalid `3.14` position - Ln %d, Col %d", pi.Position.Line, pi.Position.Column)
-	}
+	assert.Truef(t, pi.Position.Line == 2 && pi.Position.Column == 5,
+		"Invalid `3.14` position - Ln %d, Col %d", pi.Position.Line, pi.Position.Column)
 
 	brk := assertToken(t, s, lexer.BREAK, "break")
-	if brk.Position.Line != 2 || brk.Position.Column != 26 {
-		t.Errorf("Invalid `break` position - Ln %d, Col %d", brk.Position.Line, brk.Position.Column)
-	}
+	assert.Truef(t, brk.Position.Line == 2 && brk.Position.Column == 26,
+		"Invalid `break` position - Ln %d, Col %d", brk.Position.Line, brk.Position.Column)
 
 	cast := assertToken(t, s, lexer.STATICCAST, "static_cast")
-	if cast.Position.Line != 3 || cast.Position.Column != 0 {
-		t.Errorf("Invalid `static_cast` position - Ln %d, Col %d", cast.Position.Line, cast.Position.Column)
-	}
+	assert.Truef(t, cast.Position.Line == 3 && cast.Position.Column == 0,
+		"Invalid `static_cast` position - Ln %d, Col %d", cast.Position.Line, cast.Position.Column)
 
 	lt := assertToken(t, s, lexer.RELOP, "<")
-	if lt.Position.Line != 3 || lt.Position.Column != 12 {
-		t.Errorf("Invalid `<` position - Ln %d, Col %d", lt.Position.Line, lt.Position.Column)
-	}
+	assert.Truef(t, lt.Position.Line == 3 && lt.Position.Column == 12,
+		"Invalid `<` position - Ln %d, Col %d", lt.Position.Line, lt.Position.Column)
 
 	lte := assertToken(t, s, lexer.RELOP, "<=")
-	if lte.Position.Line != 3 || lte.Position.Column != 14 {
-		t.Errorf("Invalid `<=` position - Ln %d, Col %d", lte.Position.Line, lte.Position.Column)
-	}
+	assert.Truef(t, lte.Position.Line == 3 && lte.Position.Column == 14,
+		"Invalid `<=` position - Ln %d, Col %d", lte.Position.Line, lte.Position.Column)
 
 	eq := assertToken(t, s, lexer.EQUALS, "=")
-	if eq.Position.Line != 3 || eq.Position.Column != 17 {
-		t.Errorf("Invalid `=` position - Ln %d, Col %d", eq.Position.Line, eq.Position.Column)
-	}
+	assert.Truef(t, eq.Position.Line == 3 && eq.Position.Column == 17,
+		"Invalid `=` position - Ln %d, Col %d", eq.Position.Line, eq.Position.Column)
 
 	compare := assertToken(t, s, lexer.RELOP, "==")
-	if compare.Position.Line != 3 || compare.Position.Column != 19 {
-		t.Errorf("Invalid `==` position - Ln %d, Col %d", compare.Position.Line, compare.Position.Column)
-	}
+	assert.Truef(t, compare.Position.Line == 3 && compare.Position.Column == 19,
+		"Invalid `==` position - Ln %d, Col %d", compare.Position.Line, compare.Position.Column)
 }
 
 func assertToken(t *testing.T, s *lexer.Scanner, tokenType lexer.TokenType, lexeme string) lexer.Token {
