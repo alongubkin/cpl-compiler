@@ -1,12 +1,12 @@
 package lexer
 
 // Token represents a lexical token.
-type Token int
+type TokenType int
 
 // CPL's tokens
 const (
 	// Special tokens
-	ILLEGAL Token = iota
+	ILLEGAL TokenType = iota
 	EOF
 
 	// Symbols
@@ -17,7 +17,7 @@ const (
 	COMMA     // ,
 	SEMICOLON // ;
 	COLON     // :
-	EQ        // =
+	EQUALS    // =
 
 	// Keywords
 	BREAK
@@ -45,3 +45,16 @@ const (
 	ID
 	NUM
 )
+
+// Position specifies the line and character position of a token.
+// The Column and Line are both zero-based indexes.
+type Position struct {
+	Line   int
+	Column int
+}
+
+type Token struct {
+	TokenType TokenType
+	Lexeme    string
+	Position  Position
+}

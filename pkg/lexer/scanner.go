@@ -12,39 +12,94 @@ const MaxIdentifierLength = 9
 
 // Scanner represents a lexical scanner.
 type Scanner struct {
-	r *bufio.Reader
+	reader      *bufio.Reader
+	position    Position
+	eof         bool
+	bufferIndex int
+	bufferSize  int
+	buffer      [3]struct {
+		ch       rune
+		position Position
+	}
 }
 
 // NewScanner returns a new instance of Scanner.
-func NewScanner(r io.Reader) *Scanner {
-	return &Scanner{r: bufio.NewReader(r)}
+func NewScanner(reader io.Reader) *Scanner {
+	return &Scanner{
+		reader: bufio.NewReader(reader),
+	}
 }
 
 // read reads the next rune from the bufferred reader.
 // Returns the rune(0) if an error occurs (or io.EOF is returned).
-func (s *Scanner) read() rune {
-	ch, _, err := s.r.ReadRune()
-	if err != nil {
-		return eof
+func (s *Scanner) read() (rune, Position) {
+	// If we have unread characters then read them off the buffer first.
+	if s.bufferSize > 0 {
+		s.bufferSize--
+		return s.curr()
 	}
-	return ch
+
+	// Read next rune from underlying reader.
+	// Any error (including io.EOF) should return as EOF.
+	ch, _, err := s.reader.ReadRune()
+	if err != nil {
+		ch = eof
+	} else if ch == '\r' {
+		if ch, _, err := s.reader.ReadRune(); err != nil {
+			// nop
+		} else if ch != '\n' {
+			_ = s.reader.UnreadRune()
+		}
+		ch = '\n'
+	}
+
+	// Save character and position to the buffer.
+	s.bufferIndex = (s.bufferIndex + 1) % len(s.buffer)
+	buffer := &s.buffer[s.bufferIndex]
+	buffer.ch, buffer.position = ch, s.position
+
+	// Update position.
+	// Only count EOF once.
+	if ch == '\n' {
+		s.position.Line++
+		s.position.Column = 0
+	} else if !s.eof {
+		s.position.Column++
+	}
+
+	// Mark the reader as EOF.
+	// This is used so we don't double count EOF characters.
+	if ch == eof {
+		s.eof = true
+	}
+
+	return s.curr()
 }
 
-// unread places the previously read rune back on the reader.
-func (s *Scanner) unread() { _ = s.r.UnreadRune() }
+// curr returns the last read character and position.
+func (s *Scanner) curr() (ch rune, pos Position) {
+	bufferIndex := (s.bufferIndex - s.bufferSize + len(s.buffer)) % len(s.buffer)
+	buffer := &s.buffer[bufferIndex]
+	return buffer.ch, buffer.position
+}
+
+// unread pushes the previously read rune back onto the buffer.
+func (s *Scanner) unread() {
+	s.bufferSize++
+}
 
 // Scan returns the next token and literal value.
-func (s *Scanner) Scan() (tok Token, lit string) {
+func (s *Scanner) Scan() Token {
 	// Read the next rune.
-	ch := s.read()
+	ch, pos := s.read()
 
 	// Skip comments and whitespaces.
 	for {
 		if ch == '/' {
-			ch2 := s.read()
+			ch2, _ := s.read()
 			if ch2 == '*' {
 				if err := s.skipUntilEndComment(); err != nil {
-					return ILLEGAL, ""
+					return Token{TokenType: ILLEGAL, Lexeme: "", Position: pos}
 				}
 			} else {
 				s.unread()
@@ -56,7 +111,7 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 			break
 		}
 
-		ch = s.read()
+		ch, pos = s.read()
 	}
 
 	// If we see a letter then consume as an ID or reserved word.
@@ -71,82 +126,82 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	// Otherwise read the individual character.
 	switch ch {
 	case eof:
-		return EOF, ""
+		return Token{TokenType: EOF, Lexeme: "", Position: pos}
 
 	case '>', '<':
-		ch2 := s.read()
+		ch2, _ := s.read()
 		if ch2 == '=' {
-			return RELOP, string(ch) + string(ch2)
+			return Token{TokenType: RELOP, Lexeme: string(ch) + string(ch2), Position: pos}
 		}
 
 		s.unread()
-		return RELOP, string(ch)
+		return Token{TokenType: RELOP, Lexeme: string(ch), Position: pos}
 
 	case '=':
-		ch2 := s.read()
+		ch2, _ := s.read()
 		if ch2 == '=' {
-			return RELOP, "=="
+			return Token{TokenType: RELOP, Lexeme: "==", Position: pos}
 		}
 
 		s.unread()
-		return EQ, string(ch)
+		return Token{TokenType: EQUALS, Lexeme: string(ch), Position: pos}
 
 	case '!':
-		ch2 := s.read()
+		ch2, _ := s.read()
 		if ch2 == '=' {
-			return RELOP, "!="
+			return Token{TokenType: RELOP, Lexeme: "!=", Position: pos}
 		}
 
 		s.unread()
-		return NOT, string(ch)
+		return Token{TokenType: NOT, Lexeme: string(ch), Position: pos}
 
 	case '|':
-		ch2 := s.read()
+		ch2, _ := s.read()
 		if ch2 == '|' {
-			return OR, "||"
+			return Token{TokenType: OR, Lexeme: "||", Position: pos}
 		}
 
 		s.unread()
-		return ILLEGAL, string(ch)
+		return Token{TokenType: ILLEGAL, Lexeme: string(ch), Position: pos}
 
 	case '&':
-		ch2 := s.read()
+		ch2, _ := s.read()
 		if ch2 == '&' {
-			return AND, "&&"
+			return Token{TokenType: AND, Lexeme: "&&", Position: pos}
 		}
 
 		s.unread()
-		return ILLEGAL, string(ch)
+		return Token{TokenType: ILLEGAL, Lexeme: string(ch), Position: pos}
 
 	case '+', '-':
-		return ADDOP, string(ch)
+		return Token{TokenType: ADDOP, Lexeme: string(ch), Position: pos}
 
 	case '*', '/':
-		return MULOP, string(ch)
+		return Token{TokenType: MULOP, Lexeme: string(ch), Position: pos}
 
 	case ';':
-		return SEMICOLON, string(ch)
+		return Token{TokenType: SEMICOLON, Lexeme: string(ch), Position: pos}
 
 	case '(':
-		return LPAREN, string(ch)
+		return Token{TokenType: LPAREN, Lexeme: string(ch), Position: pos}
 
 	case ')':
-		return RPAREN, string(ch)
+		return Token{TokenType: RPAREN, Lexeme: string(ch), Position: pos}
 
 	case '{':
-		return LBRACKET, string(ch)
+		return Token{TokenType: LBRACKET, Lexeme: string(ch), Position: pos}
 
 	case '}':
-		return RBRACKET, string(ch)
+		return Token{TokenType: RBRACKET, Lexeme: string(ch), Position: pos}
 
 	case ',':
-		return COMMA, string(ch)
+		return Token{TokenType: COMMA, Lexeme: string(ch), Position: pos}
 
 	case ':':
-		return COLON, string(ch)
+		return Token{TokenType: COLON, Lexeme: string(ch), Position: pos}
 	}
 
-	return ILLEGAL, string(ch)
+	return Token{TokenType: ILLEGAL, Lexeme: string(ch), Position: pos}
 }
 
 // scanWhitespace consumes the current rune and all contiguous whitespace.
@@ -154,7 +209,7 @@ func (s *Scanner) scanWhitespace() {
 	// Read every subsequent whitespace character into the buffer.
 	// Non-whitespace characters and EOF will cause the loop to exit.
 	for {
-		if ch := s.read(); ch == eof {
+		if ch, _ := s.read(); ch == eof {
 			break
 		} else if !isWhitespace(ch) {
 			s.unread()
@@ -164,15 +219,17 @@ func (s *Scanner) scanWhitespace() {
 }
 
 // scanIdentifier consumes the current rune and all contiguous identifier runes.
-func (s *Scanner) scanIdentifier() (tok Token, lit string) {
+func (s *Scanner) scanIdentifier() Token {
+	ch, pos := s.read()
+
 	// Create a buffer and read the current character into it.
 	var buf bytes.Buffer
-	buf.WriteRune(s.read())
+	buf.WriteRune(ch)
 
 	// Read every subsequent ident character into the buffer.
 	// Non-ident characters and EOF will cause the loop to exit.
 	for {
-		if ch := s.read(); ch == eof {
+		if ch, _ = s.read(); ch == eof {
 			break
 		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' {
 			s.unread()
@@ -185,62 +242,64 @@ func (s *Scanner) scanIdentifier() (tok Token, lit string) {
 	// If the string matches a keyword then return that keyword.
 	switch buf.String() {
 	case "break":
-		return BREAK, buf.String()
+		return Token{TokenType: BREAK, Lexeme: buf.String(), Position: pos}
 	case "case":
-		return CASE, buf.String()
+		return Token{TokenType: CASE, Lexeme: buf.String(), Position: pos}
 	case "default":
-		return DEFAULT, buf.String()
+		return Token{TokenType: DEFAULT, Lexeme: buf.String(), Position: pos}
 	case "else":
-		return ELSE, buf.String()
+		return Token{TokenType: ELSE, Lexeme: buf.String(), Position: pos}
 	case "float":
-		return FLOAT, buf.String()
+		return Token{TokenType: FLOAT, Lexeme: buf.String(), Position: pos}
 	case "if":
-		return IF, buf.String()
+		return Token{TokenType: IF, Lexeme: buf.String(), Position: pos}
 	case "input":
-		return INPUT, buf.String()
+		return Token{TokenType: INPUT, Lexeme: buf.String(), Position: pos}
 	case "int":
-		return INT, buf.String()
+		return Token{TokenType: INT, Lexeme: buf.String(), Position: pos}
 	case "output":
-		return OUTPUT, buf.String()
+		return Token{TokenType: OUTPUT, Lexeme: buf.String(), Position: pos}
 	case "switch":
-		return SWITCH, buf.String()
+		return Token{TokenType: SWITCH, Lexeme: buf.String(), Position: pos}
 	case "while":
-		return WHILE, buf.String()
+		return Token{TokenType: WHILE, Lexeme: buf.String(), Position: pos}
 	case "static_cast":
-		return STATICCAST, buf.String()
+		return Token{TokenType: STATICCAST, Lexeme: buf.String(), Position: pos}
 	}
 
 	// Otherwise return as a regular identifier - just need to make sure its length is okay
 	// and it doesn't contain an underscore, which is an illegal character for IDs.
 	if len(buf.String()) <= MaxIdentifierLength && !strings.ContainsRune(buf.String(), '_') {
-		return ID, buf.String()
+		return Token{TokenType: ID, Lexeme: buf.String(), Position: pos}
 	}
 
-	return ILLEGAL, buf.String()
+	return Token{TokenType: ILLEGAL, Lexeme: buf.String(), Position: pos}
 }
 
 // scanNumber consumes a contiguous series of digits.
-func (s *Scanner) scanNumber() (tok Token, lit string) {
+func (s *Scanner) scanNumber() Token {
 	var buf bytes.Buffer
+	ch, pos := s.read()
+
 	for {
-		ch := s.read()
 		if !isDigit(ch) && ch != '.' {
 			s.unread()
 			break
 		}
 		_, _ = buf.WriteRune(ch)
+		ch, _ = s.read()
 	}
 
-	return NUM, buf.String()
+	return Token{TokenType: NUM, Lexeme: buf.String(), Position: pos}
 }
 
 // skipUntilEndComment skips characters until it reaches a '*/' symbol.
 func (s *Scanner) skipUntilEndComment() error {
 	for {
-		if ch := s.read(); ch == '*' {
+		if ch, _ := s.read(); ch == '*' {
 			// We might be at the end.
 		star:
-			ch2 := s.read()
+			ch2, _ := s.read()
 			if ch2 == '/' {
 				return nil
 			} else if ch2 == '*' {
