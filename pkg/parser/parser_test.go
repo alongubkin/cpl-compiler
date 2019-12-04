@@ -7,12 +7,19 @@ import (
 	"github.com/alongubkin/cpl-compiler/pkg/lexer"
 	"github.com/alongubkin/cpl-compiler/pkg/parser"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
+func TestEmptyProgram(t *testing.T) {
+	program, errors := parser.Parse("")
+	assert.Empty(t, errors)
+	assert.EqualValues(t, &parser.Program{Declarations: []parser.Declaration{}}, program)
+}
+
 func TestDeclarationOneID(t *testing.T) {
-	program, err := parser.NewParser(strings.NewReader("var1 : int;")).ParseProgram()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("var1 : int;"))
+	program, err := p.ParseProgram()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
@@ -21,8 +28,10 @@ func TestDeclarationOneID(t *testing.T) {
 }
 
 func TestDeclarationMultipeIDs(t *testing.T) {
-	program, err := parser.NewParser(strings.NewReader("var1, var2, var3 : float;")).ParseProgram()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("var1, var2, var3 : float;"))
+	program, err := p.ParseProgram()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"var1", "var2", "var3"}, Type: parser.Float},
@@ -41,9 +50,10 @@ func TestDeclarationInvalidType(t *testing.T) {
 }
 
 func TestMultipleDeclarations(t *testing.T) {
-	program, err := parser.NewParser(
-		strings.NewReader("var1, var2 : int; var3 : float; var4,var5:int;")).ParseProgram()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("var1, var2 : int; var3 : float; var4,var5:int;"))
+	program, err := p.ParseProgram()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"var1", "var2"}, Type: parser.Integer},
@@ -54,8 +64,10 @@ func TestMultipleDeclarations(t *testing.T) {
 }
 
 func TestAddTwoLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 + 3")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 + 3"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS:      &parser.NumberLiteral{Value: 1},
 		Operator: parser.Add,
@@ -64,8 +76,10 @@ func TestAddTwoLiteralsExpression(t *testing.T) {
 }
 
 func TestAddMultipleLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 + 3 + 7 + 10")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 + 3 + 7 + 10"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS: &parser.ArithmeticExpression{
@@ -82,8 +96,10 @@ func TestAddMultipleLiteralsExpression(t *testing.T) {
 }
 
 func TestSubtractTwoLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 - 3")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 - 3"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS:      &parser.NumberLiteral{Value: 1},
 		Operator: parser.Subtract,
@@ -92,8 +108,10 @@ func TestSubtractTwoLiteralsExpression(t *testing.T) {
 }
 
 func TestSubtractMultipleLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 - 3 - 7 - 10")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 - 3 - 7 - 10"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS: &parser.ArithmeticExpression{
@@ -110,8 +128,10 @@ func TestSubtractMultipleLiteralsExpression(t *testing.T) {
 }
 
 func TestAddAndSubtractLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 + 3 - 5")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 + 3 - 5"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS:      &parser.NumberLiteral{Value: 1},
@@ -124,8 +144,10 @@ func TestAddAndSubtractLiteralsExpression(t *testing.T) {
 }
 
 func TestMultiplyTwoLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 * 3")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 * 3"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS:      &parser.NumberLiteral{Value: 1},
 		Operator: parser.Multiply,
@@ -134,8 +156,10 @@ func TestMultiplyTwoLiteralsExpression(t *testing.T) {
 }
 
 func TestMultiplyMultipleLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 * 3 * 7 * 10")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 * 3 * 7 * 10"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS: &parser.ArithmeticExpression{
@@ -152,8 +176,10 @@ func TestMultiplyMultipleLiteralsExpression(t *testing.T) {
 }
 
 func TestDivideTwoLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 / 3")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 / 3"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS:      &parser.NumberLiteral{Value: 1},
 		Operator: parser.Divide,
@@ -162,8 +188,10 @@ func TestDivideTwoLiteralsExpression(t *testing.T) {
 }
 
 func TestDivideMultipleLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 / 3 / 7 / 10")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 / 3 / 7 / 10"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS: &parser.ArithmeticExpression{
@@ -180,8 +208,10 @@ func TestDivideMultipleLiteralsExpression(t *testing.T) {
 }
 
 func TestMultiplyAndDivideLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 * 3 / 5")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 * 3 / 5"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS:      &parser.NumberLiteral{Value: 1},
@@ -194,8 +224,10 @@ func TestMultiplyAndDivideLiteralsExpression(t *testing.T) {
 }
 
 func TestMultiplyAndAddLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 + 3 * 5")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 + 3 * 5"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS:      &parser.NumberLiteral{Value: 1},
 		Operator: parser.Add,
@@ -208,8 +240,10 @@ func TestMultiplyAndAddLiteralsExpression(t *testing.T) {
 }
 
 func TestAddAndMultiplyLiteralsExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("1 * 3 + 5")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("1 * 3 + 5"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS:      &parser.NumberLiteral{Value: 1},
@@ -222,8 +256,10 @@ func TestAddAndMultiplyLiteralsExpression(t *testing.T) {
 }
 
 func TestParenthesisExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("(1 + 3) * 5")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("(1 + 3) * 5"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS:      &parser.NumberLiteral{Value: 1},
@@ -236,8 +272,10 @@ func TestParenthesisExpression(t *testing.T) {
 }
 
 func TestMultipleParenthesisExpression(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("(1 + (3 + 7)) * 5")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("(1 + (3 + 7)) * 5"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS:      &parser.NumberLiteral{Value: 1},
@@ -254,8 +292,10 @@ func TestMultipleParenthesisExpression(t *testing.T) {
 }
 
 func TestExpressionWithVariables(t *testing.T) {
-	expr, err := parser.NewParser(strings.NewReader("(x + (y + 7)) / c")).ParseExpression()
-	require.NoError(t, err)
+	p := parser.NewParser(strings.NewReader("(x + (y + 7)) / c"))
+	expr, err := p.ParseExpression()
+	assert.NoError(t, err)
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS:      &parser.VariableExpression{Variable: "x"},
