@@ -11,19 +11,19 @@ import (
 func TestScannerOneCharacter(t *testing.T) {
 	s := lexer.NewScanner(strings.NewReader("a"))
 	assertToken(t, s, lexer.ID, "a")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerOneDigit(t *testing.T) {
 	s := lexer.NewScanner(strings.NewReader("9"))
 	assertToken(t, s, lexer.NUM, "9")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerID(t *testing.T) {
 	s := lexer.NewScanner(strings.NewReader("heLlo"))
 	assertToken(t, s, lexer.ID, "heLlo")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerLiterals(t *testing.T) {
@@ -33,7 +33,7 @@ func TestScannerLiterals(t *testing.T) {
 	assertToken(t, s, lexer.ID, "hhh4h33")
 	assertToken(t, s, lexer.NUM, "111")
 	assertToken(t, s, lexer.NUM, "34")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerKeywords(t *testing.T) {
@@ -59,7 +59,7 @@ func TestScannerKeywords(t *testing.T) {
 	assertToken(t, s, lexer.STATICCAST, "static_cast")
 	assertToken(t, s, lexer.SWITCH, "switch")
 	assertToken(t, s, lexer.WHILE, "while")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerSymbols(t *testing.T) {
@@ -73,7 +73,7 @@ func TestScannerSymbols(t *testing.T) {
 	assertToken(t, s, lexer.COLON, ":")
 	assertToken(t, s, lexer.SEMICOLON, ";")
 	assertToken(t, s, lexer.EQUALS, "=")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerInvalidIDs(t *testing.T) {
@@ -82,7 +82,7 @@ func TestScannerInvalidIDs(t *testing.T) {
 	assertToken(t, s, lexer.ILLEGAL, "xx_y")
 	assertToken(t, s, lexer.NUM, "111")
 	assertToken(t, s, lexer.ID, "a")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerDecimalNumbers(t *testing.T) {
@@ -92,7 +92,7 @@ func TestScannerDecimalNumbers(t *testing.T) {
 	assertToken(t, s, lexer.ILLEGAL, ".")
 	assertToken(t, s, lexer.NUM, "456")
 	assertToken(t, s, lexer.NUM, "0123.001")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerOperators(t *testing.T) {
@@ -124,7 +124,7 @@ func TestScannerOperators(t *testing.T) {
 	assertToken(t, s, lexer.AND, "&&")
 	assertToken(t, s, lexer.NOT, "!")
 	assertToken(t, s, lexer.NOT, "!")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerComments(t *testing.T) {
@@ -141,7 +141,7 @@ func TestScannerComments(t *testing.T) {
 	assertToken(t, s, lexer.MULOP, "*")
 	assertToken(t, s, lexer.NUM, "4")
 	assertToken(t, s, lexer.ILLEGAL, "")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 
 }
 
@@ -153,7 +153,7 @@ func TestScannerNestedComments(t *testing.T) {
 	assertToken(t, s, lexer.MULOP, "*")
 	assertToken(t, s, lexer.MULOP, "/")
 	assertToken(t, s, lexer.ID, "id2")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerWhitespace(t *testing.T) {
@@ -161,7 +161,7 @@ func TestScannerWhitespace(t *testing.T) {
 	assertToken(t, s, lexer.ID, "hello")
 	assertToken(t, s, lexer.BREAK, "break")
 	assertToken(t, s, lexer.ID, "test")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerNotID(t *testing.T) {
@@ -170,7 +170,7 @@ func TestScannerNotID(t *testing.T) {
 	assertToken(t, s, lexer.ID, "id")
 	assertToken(t, s, lexer.NOT, "!")
 	assertToken(t, s, lexer.ID, "id1")
-	assertToken(t, s, lexer.EOF, "")
+	assertToken(t, s, lexer.EOF, "EOF")
 }
 
 func TestScannerPosition(t *testing.T) {
