@@ -1,7 +1,9 @@
 package parser
 
 import (
+	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/alongubkin/cpl-compiler/pkg/lexer"
@@ -145,4 +147,100 @@ func (p *Parser) ParseIDList() ([]string, error) {
 	}
 
 	return names, nil
+}
+
+// ParseExpression parses expressions that might contain additions or subtractions.
+// 	expression -> term expression'
+//  expression' -> ADDOP term expression' | ε
+func (p *Parser) ParseExpression() (Expression, error) {
+	result, err := p.ParseTerm()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.lookahead.TokenType == lexer.ADDOP {
+		var operator Operator
+		switch token, _ := p.match(lexer.ADDOP); token.Lexeme {
+		case "+":
+			operator = Add
+		case "-":
+			operator = Subtract
+		}
+
+		rhs, err := p.ParseTerm()
+		if err != nil {
+			return nil, err
+		}
+
+		result = &ArithmeticExpression{LHS: result, RHS: rhs, Operator: operator}
+	}
+
+	return result, nil
+}
+
+// ParseTerm parses expressions that might contain multipications or divisions.
+// 	term -> factor term'
+// 	term' -> MULOP factor term' | ε
+func (p *Parser) ParseTerm() (Expression, error) {
+	result, err := p.ParseFactor()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.lookahead.TokenType == lexer.MULOP {
+		var operator Operator
+		switch token, _ := p.match(lexer.MULOP); token.Lexeme {
+		case "*":
+			operator = Multiply
+		case "/":
+			operator = Divide
+		}
+
+		rhs, err := p.ParseFactor()
+		if err != nil {
+			return nil, err
+		}
+
+		result = &ArithmeticExpression{LHS: result, RHS: rhs, Operator: operator}
+	}
+
+	return result, nil
+}
+
+// ParseFactor parses a single variable, single constant number or (...some expr...).
+// 	factor -> '(' expression ')' | ID | NUM
+func (p *Parser) ParseFactor() (Expression, error) {
+	switch p.lookahead.TokenType {
+	case lexer.LPAREN:
+		p.match(lexer.LPAREN)
+
+		expr, err := p.ParseExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		if token, ok := p.match(lexer.RPAREN); !ok {
+			return nil, newParseError(token.Lexeme, []string{")"}, token.Position)
+		}
+
+		return expr, nil
+
+	case lexer.ID:
+		token, _ := p.match(lexer.ID)
+		return &VariableExpression{Variable: token.Lexeme}, nil
+
+	case lexer.NUM:
+		token, _ := p.match(lexer.NUM)
+
+		value, err := strconv.ParseFloat(token.Lexeme, 64)
+		if err != nil {
+			return nil, &ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)}
+		}
+
+		return &NumberLiteral{Value: value}, nil
+
+	default:
+		return nil, newParseError(p.lookahead.Lexeme, []string{"(", "ID", "NUM"},
+			p.lookahead.Position)
+	}
 }
