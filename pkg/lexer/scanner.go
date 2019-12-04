@@ -17,7 +17,7 @@ type Scanner struct {
 	eof         bool
 	bufferIndex int
 	bufferSize  int
-	buffer      [3]struct {
+	buffer      [1024]struct {
 		ch       rune
 		position Position
 	}

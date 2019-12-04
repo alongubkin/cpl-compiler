@@ -11,7 +11,7 @@ import (
 
 // Parser represents a CPL parser.
 type Parser struct {
-	Errors    []error
+	Errors    []ParseError
 	scanner   *lexer.Scanner
 	lookahead lexer.Token
 }
@@ -20,22 +20,16 @@ type Parser struct {
 func NewParser(reader io.Reader) *Parser {
 	scanner := lexer.NewScanner(reader)
 	return &Parser{
-		Errors:    []error{},
+		Errors:    []ParseError{},
 		scanner:   scanner,
 		lookahead: scanner.Scan(),
 	}
 }
 
 // Parse parses a CPL program and returns its AST representation.
-func Parse(s string) (*Program, []error) {
+func Parse(s string) (*Program, []ParseError) {
 	parser := NewParser(strings.NewReader(s))
-
-	program, err := parser.ParseProgram()
-	if err != nil {
-		return program, append(parser.Errors, err)
-	}
-
-	return program, parser.Errors
+	return parser.ParseProgram(), parser.Errors
 }
 
 func (p *Parser) matchToken(tokenTypes ...lexer.TokenType) (*lexer.Token, bool) {
@@ -65,8 +59,7 @@ func (p *Parser) match(tokenTypes ...lexer.TokenType) (*lexer.Token, bool) {
 		if ok {
 			// A token was found! Continue parsing from here.
 			// TODO: Add support for token types
-			p.Errors = append(p.Errors, newParseError(nextRealToken.Lexeme,
-				[]string{}, nextRealToken.Position))
+			p.addError(newParseError(nextRealToken.Lexeme, []string{}, nextRealToken.Position))
 			return token, true
 		} else if token.TokenType == lexer.EOF {
 			break
@@ -77,105 +70,95 @@ func (p *Parser) match(tokenTypes ...lexer.TokenType) (*lexer.Token, bool) {
 		skips++
 	}
 
-	// We reached EOF and no token was found. Backtrack to the real next token.
+	// We reached EOF and no token was found. Backtrack to the current token.
 	for i := 0; i < skips; i++ {
 		p.scanner.Unscan()
 	}
 
-	// Update the lookahead to the token after the real next token.
-	p.lookahead = p.scanner.Scan()
+	// Revert the lookahead to original one.
+	p.lookahead = nextRealToken // p.scanner.Scan()
 	return &nextRealToken, false
 }
 
 // ParseProgram parses a CPL program and returns a Program AST object.
 // 	program -> declarations stmt_block
-func (p *Parser) ParseProgram() (*Program, error) {
+func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
 
 	// Parse declarations.
-	var err error
-	if program.Declarations, err = p.ParseDeclarations(); err != nil {
-		p.Errors = append(p.Errors, err)
-	}
+	program.Declarations = p.ParseDeclarations()
+
+	// Parse statements.
+	program.Statements = p.ParseStatementsBlock()
 
 	// Make sure there's an EOF at the end of the file.
 	if token, ok := p.match(lexer.EOF); !ok {
-		p.Errors = append(p.Errors, newParseError(token.Lexeme, []string{"EOF"}, token.Position))
+		p.addError(newParseError(token.Lexeme, []string{"EOF"}, token.Position))
 	}
 
-	return program, nil
+	return program
 }
 
 // ParseDeclarations parses a list of declarations and returns a Declaration AST array.
 // 	declarations -> declaration declarations | ε
-func (p *Parser) ParseDeclarations() ([]Declaration, error) {
+func (p *Parser) ParseDeclarations() []Declaration {
 	declarations := []Declaration{}
 	for p.lookahead.TokenType == lexer.ID {
-		declaration, err := p.ParseDeclaration()
-		declarations = append(declarations, *declaration)
-
-		if err != nil {
-			p.Errors = append(p.Errors, err)
-		}
+		declarations = append(declarations, *p.ParseDeclaration())
 	}
 
-	return declarations, nil
+	return declarations
 }
 
 // ParseDeclaration parses a declaration and returns a Declaration AST object.
 // 	declaration -> idlist ':' type ';'
-func (p *Parser) ParseDeclaration() (*Declaration, error) {
+func (p *Parser) ParseDeclaration() *Declaration {
 	declaration := &Declaration{}
-
-	var err error
-	if declaration.Names, err = p.ParseIDList(); err != nil {
-		p.Errors = append(p.Errors, err)
-	}
+	declaration.Names = p.ParseIDList()
 
 	if token, ok := p.match(lexer.COLON); !ok {
-		p.Errors = append(p.Errors, newParseError(token.Lexeme, []string{":"}, token.Position))
+		p.addError(newParseError(token.Lexeme, []string{":"}, token.Position))
 	}
 
-	if declaration.Type, err = p.ParseType(); err != nil {
-		p.Errors = append(p.Errors, err)
-	}
+	declaration.Type = p.ParseType()
 
 	if token, ok := p.match(lexer.SEMICOLON); !ok {
-		p.Errors = append(p.Errors, newParseError(token.Lexeme, []string{";"}, token.Position))
+		p.addError(newParseError(token.Lexeme, []string{";"}, token.Position))
 	}
 
-	return declaration, nil
+	return declaration
 }
 
 // ParseType parses a type returns it as a DataType.
 // 	type -> INT | FLOAT
-func (p *Parser) ParseType() (DataType, error) {
+func (p *Parser) ParseType() DataType {
 	token, ok := p.match(lexer.INT, lexer.FLOAT)
 	if !ok {
-		return Unknown, newParseError(token.Lexeme, []string{"int", "float"}, token.Position)
+		p.addError(newParseError(token.Lexeme, []string{"int", "float"}, token.Position))
+		return Unknown
 	}
 
 	switch token.TokenType {
 	case lexer.INT:
-		return Integer, nil
+		return Integer
 	case lexer.FLOAT:
-		return Float, nil
-	default:
-		panic("Unknown token type in ParseType")
+		return Float
 	}
+
+	return Unknown
 }
 
 // ParseIDList parses a list of IDs and returns a string array.
 // 	idlist -> ID idlist'
 // 	idlist' -> ',' ID idlist' | ε
-func (p *Parser) ParseIDList() ([]string, error) {
+func (p *Parser) ParseIDList() []string {
 	names := []string{}
 
 	// Parse the first name
 	if token, ok := p.match(lexer.ID); ok {
 		names = append(names, token.Lexeme)
 	} else {
-		p.Errors = append(p.Errors, newParseError(token.Lexeme, []string{"ID"}, token.Position))
+		p.addError(newParseError(token.Lexeme, []string{"ID"}, token.Position))
 	}
 
 	// Parse other names if exist
@@ -185,22 +168,110 @@ func (p *Parser) ParseIDList() ([]string, error) {
 		if token, ok := p.match(lexer.ID); ok {
 			names = append(names, token.Lexeme)
 		} else {
-			p.Errors = append(p.Errors, newParseError(token.Lexeme, []string{"ID"}, token.Position))
+			p.addError(newParseError(token.Lexeme, []string{"ID"}, token.Position))
 		}
 	}
 
-	return names, nil
+	return names
+}
+
+// ParseStatement parses a CPL statement.
+//	stmt -> assignment_stmt | input_stmt | output_stmt | if_stmt | while_stmt
+//		| switch_stmt | break_stmt | stmt_block
+func (p *Parser) ParseStatement() Statement {
+	switch p.lookahead.TokenType {
+	case lexer.ID:
+		return p.ParseAssignmentStatement()
+	}
+
+	return nil
+}
+
+// ParseAssignmentStatement parses a CPL assignment statement.
+// 	assignment_stmt -> ID '=' assignment_stmt'
+// 	assignment_stmt' -> expression ';'
+//   	| STATIC_CAST '(' type ')' '(' expression ')' ';
+func (p *Parser) ParseAssignmentStatement() *AssignmentStatement {
+	result := &AssignmentStatement{}
+
+	if token, ok := p.match(lexer.ID); ok {
+		result.Variable = token.Lexeme
+	} else {
+		p.addError(newParseError(token.Lexeme, []string{"ID"}, token.Position))
+	}
+
+	if token, ok := p.match(lexer.EQUALS); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"ID"}, token.Position))
+	}
+
+	// Parse static_cast(type) if exists
+	if p.lookahead.TokenType == lexer.STATICCAST {
+		p.match(lexer.STATICCAST)
+
+		if token, ok := p.match(lexer.LPAREN); !ok {
+			p.addError(newParseError(token.Lexeme, []string{"("}, token.Position))
+		}
+
+		result.CastType = p.ParseType()
+
+		if token, ok := p.match(lexer.RPAREN); !ok {
+			p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
+		}
+	}
+
+	// Parse expression
+	result.Value = p.ParseExpression()
+
+	if token, ok := p.match(lexer.SEMICOLON); !ok {
+		p.addError(newParseError(token.Lexeme, []string{";"}, token.Position))
+	}
+
+	return result
+}
+
+// ParseStatementsBlock parses a block of statements.
+//	stmt_block -> '{' stmtlist '}'
+func (p *Parser) ParseStatementsBlock() []Statement {
+	// Parse {
+	startBlock := false
+	startBlockToken, startBlock := p.match(lexer.LBRACKET)
+	if !startBlock {
+		p.addError(newParseError(startBlockToken.Lexeme,
+			[]string{"{"}, startBlockToken.Position))
+	}
+
+	statements := p.ParseStatements()
+
+	// Parse }
+	// Only show an error for the } if there was a {
+	if token, ok := p.match(lexer.RBRACKET); !ok && startBlock {
+		p.addError(newParseError(token.Lexeme, []string{"}"}, token.Position))
+	}
+
+	return statements
+}
+
+// ParseStatements parses zero or more statements.
+//	stmtlist -> stmt stmtlist | ε
+func (p *Parser) ParseStatements() []Statement {
+	statements := []Statement{}
+	for {
+		statement := p.ParseStatement()
+		if statement == nil {
+			break
+		}
+
+		statements = append(statements, statement)
+	}
+
+	return statements
 }
 
 // ParseExpression parses expressions that might contain additions or subtractions.
 // 	expression -> term expression'
 //  expression' -> ADDOP term expression' | ε
-func (p *Parser) ParseExpression() (Expression, error) {
-	result, err := p.ParseTerm()
-	if err != nil {
-		return result, err
-	}
-
+func (p *Parser) ParseExpression() Expression {
+	result := p.ParseTerm()
 	for p.lookahead.TokenType == lexer.ADDOP {
 		var operator Operator
 		switch token, _ := p.match(lexer.ADDOP); token.Lexeme {
@@ -210,26 +281,18 @@ func (p *Parser) ParseExpression() (Expression, error) {
 			operator = Subtract
 		}
 
-		rhs, err := p.ParseTerm()
-		if err != nil {
-			p.Errors = append(p.Errors, err)
-		}
-
+		rhs := p.ParseTerm()
 		result = &ArithmeticExpression{LHS: result, RHS: rhs, Operator: operator}
 	}
 
-	return result, nil
+	return result
 }
 
 // ParseTerm parses expressions that might contain multipications or divisions.
 // 	term -> factor term'
 // 	term' -> MULOP factor term' | ε
-func (p *Parser) ParseTerm() (Expression, error) {
-	result, err := p.ParseFactor()
-	if err != nil {
-		return result, err
-	}
-
+func (p *Parser) ParseTerm() Expression {
+	result := p.ParseFactor()
 	for p.lookahead.TokenType == lexer.MULOP {
 		var operator Operator
 		switch token, _ := p.match(lexer.MULOP); token.Lexeme {
@@ -239,51 +302,54 @@ func (p *Parser) ParseTerm() (Expression, error) {
 			operator = Divide
 		}
 
-		rhs, err := p.ParseFactor()
-		if err != nil {
-			p.Errors = append(p.Errors, err)
-		}
-
-		result = &ArithmeticExpression{LHS: result, RHS: rhs, Operator: operator}
+		result = &ArithmeticExpression{LHS: result, RHS: p.ParseFactor(), Operator: operator}
 	}
 
-	return result, nil
+	return result
 }
 
 // ParseFactor parses a single variable, single constant number or (...some expr...).
 // 	factor -> '(' expression ')' | ID | NUM
-func (p *Parser) ParseFactor() (Expression, error) {
+func (p *Parser) ParseFactor() Expression {
 	switch p.lookahead.TokenType {
 	case lexer.LPAREN:
 		p.match(lexer.LPAREN)
 
-		expr, err := p.ParseExpression()
-		if err != nil {
-			p.Errors = append(p.Errors, err)
-		}
+		expr := p.ParseExpression()
 
 		if token, ok := p.match(lexer.RPAREN); !ok {
-			p.Errors = append(p.Errors, newParseError(token.Lexeme, []string{")"}, token.Position))
+			p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
 		}
 
-		return expr, nil
+		return expr
 
 	case lexer.ID:
 		token, _ := p.match(lexer.ID)
-		return &VariableExpression{Variable: token.Lexeme}, nil
+		return &VariableExpression{Variable: token.Lexeme}
 
 	case lexer.NUM:
 		token, _ := p.match(lexer.NUM)
 
 		value, err := strconv.ParseFloat(token.Lexeme, 64)
 		if err != nil {
-			p.Errors = append(p.Errors, &ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)})
+			p.addError(ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)})
 		}
 
-		return &NumberLiteral{Value: value}, nil
+		return &NumberLiteral{Value: value}
 
 	default:
-		return nil, newParseError(p.lookahead.Lexeme, []string{"(", "ID", "NUM"},
-			p.lookahead.Position)
+		p.addError(newParseError(p.lookahead.Lexeme, []string{"(", "ID", "NUM"},
+			p.lookahead.Position))
+		return nil
 	}
+}
+
+func (p *Parser) addError(e ParseError) {
+	for _, err := range p.Errors {
+		if err.Pos == e.Pos {
+			return
+		}
+	}
+
+	p.Errors = append(p.Errors, e)
 }

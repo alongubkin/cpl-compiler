@@ -16,8 +16,8 @@ type ParseError struct {
 }
 
 // newParseError returns a new instance of ParseError.
-func newParseError(found string, expected []string, pos lexer.Position) *ParseError {
-	return &ParseError{Found: found, Expected: expected, Pos: pos}
+func newParseError(found string, expected []string, pos lexer.Position) ParseError {
+	return ParseError{Found: found, Expected: expected, Pos: pos}
 }
 
 // Error returns the string representation of the error.

@@ -36,6 +36,7 @@ type Node interface {
 // Program represents the root node of a CPL program.
 type Program struct {
 	Declarations []Declaration
+	Statements   []Statement
 }
 
 // Declaration of one or more variables.
