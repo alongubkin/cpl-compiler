@@ -64,6 +64,18 @@ type AssignmentStatement struct {
 	CastType DataType
 }
 
+// InputStatement represents a command for retrieving user input to a variable.
+// e.g: input(a);
+type InputStatement struct {
+	Variable string
+}
+
+// OutputStatement represents a command for printing an expression.
+// e.g: output(x + y);
+type OutputStatement struct {
+	Value Expression
+}
+
 // Expression is a combination of numbers, variables and operators that
 // can be evaluated to a value.
 type Expression interface {
@@ -93,11 +105,15 @@ type ArithmeticExpression struct {
 func (*Program) node()              {}
 func (*Declaration) node()          {}
 func (*AssignmentStatement) node()  {}
+func (*InputStatement) node()       {}
+func (*OutputStatement) node()      {}
 func (*VariableExpression) node()   {}
 func (*NumberLiteral) node()        {}
 func (*ArithmeticExpression) node() {}
 
 func (*AssignmentStatement) statement() {}
+func (*InputStatement) statement()      {}
+func (*OutputStatement) statement()     {}
 
 func (*VariableExpression) expression()   {}
 func (*NumberLiteral) expression()        {}

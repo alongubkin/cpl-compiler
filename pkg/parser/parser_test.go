@@ -385,3 +385,22 @@ func TestProgramWithAssignmentStatements(t *testing.T) {
 		},
 	}, program)
 }
+
+func TestInputStatement(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("input(x);"))
+	statement := p.ParseStatement()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.InputStatement{Variable: "x"}, statement)
+}
+
+func TestOutputStatement(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("output(3 + x);"))
+	statement := p.ParseStatement()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.OutputStatement{
+		Value: &parser.ArithmeticExpression{
+			LHS:      &parser.NumberLiteral{Value: 3},
+			Operator: parser.Add,
+			RHS:      &parser.VariableExpression{Variable: "x"},
+		}}, statement)
+}

@@ -182,6 +182,12 @@ func (p *Parser) ParseStatement() Statement {
 	switch p.lookahead.TokenType {
 	case lexer.ID:
 		return p.ParseAssignmentStatement()
+
+	case lexer.INPUT:
+		return p.ParseInputStatement()
+
+	case lexer.OUTPUT:
+		return p.ParseOutputStatement()
 	}
 
 	return nil
@@ -194,12 +200,14 @@ func (p *Parser) ParseStatement() Statement {
 func (p *Parser) ParseAssignmentStatement() *AssignmentStatement {
 	result := &AssignmentStatement{}
 
+	// ID
 	if token, ok := p.match(lexer.ID); ok {
 		result.Variable = token.Lexeme
 	} else {
 		p.addError(newParseError(token.Lexeme, []string{"ID"}, token.Position))
 	}
 
+	// =
 	if token, ok := p.match(lexer.EQUALS); !ok {
 		p.addError(newParseError(token.Lexeme, []string{"ID"}, token.Position))
 	}
@@ -208,12 +216,14 @@ func (p *Parser) ParseAssignmentStatement() *AssignmentStatement {
 	if p.lookahead.TokenType == lexer.STATICCAST {
 		p.match(lexer.STATICCAST)
 
+		// (
 		if token, ok := p.match(lexer.LPAREN); !ok {
 			p.addError(newParseError(token.Lexeme, []string{"("}, token.Position))
 		}
 
 		result.CastType = p.ParseType()
 
+		// )
 		if token, ok := p.match(lexer.RPAREN); !ok {
 			p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
 		}
@@ -222,6 +232,72 @@ func (p *Parser) ParseAssignmentStatement() *AssignmentStatement {
 	// Parse expression
 	result.Value = p.ParseExpression()
 
+	// ;
+	if token, ok := p.match(lexer.SEMICOLON); !ok {
+		p.addError(newParseError(token.Lexeme, []string{";"}, token.Position))
+	}
+
+	return result
+}
+
+// ParseInputStatement parses a CPL input statement, which can be used for retrieving
+// user input.
+// 	input_stmt -> INPUT '(' ID ')' ';'
+func (p *Parser) ParseInputStatement() *InputStatement {
+	if _, ok := p.match(lexer.INPUT); !ok {
+		return nil
+	}
+
+	result := &InputStatement{}
+
+	// (
+	if token, ok := p.match(lexer.LPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"("}, token.Position))
+	}
+
+	// ID
+	if token, ok := p.match(lexer.ID); ok {
+		result.Variable = token.Lexeme
+	} else {
+		p.addError(newParseError(token.Lexeme, []string{"ID"}, token.Position))
+	}
+
+	// )
+	if token, ok := p.match(lexer.RPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
+	}
+
+	// ;
+	if token, ok := p.match(lexer.SEMICOLON); !ok {
+		p.addError(newParseError(token.Lexeme, []string{";"}, token.Position))
+	}
+
+	return result
+}
+
+// ParseOutputStatement parses a CPL output statement, which can be used for printing
+// expressions.
+// 	output_stmt -> OUTPUT '(' expression ')' ';'
+func (p *Parser) ParseOutputStatement() *OutputStatement {
+	if _, ok := p.match(lexer.OUTPUT); !ok {
+		return nil
+	}
+
+	result := &OutputStatement{}
+
+	// (
+	if token, ok := p.match(lexer.LPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"("}, token.Position))
+	}
+
+	result.Value = p.ParseExpression()
+
+	// )
+	if token, ok := p.match(lexer.RPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
+	}
+
+	// ;
 	if token, ok := p.match(lexer.SEMICOLON); !ok {
 		p.addError(newParseError(token.Lexeme, []string{";"}, token.Position))
 	}
