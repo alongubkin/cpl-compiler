@@ -4,13 +4,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alongubkin/cpl-compiler/pkg/lexer"
 	"github.com/alongubkin/cpl-compiler/pkg/parser"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDeclarationOneID(t *testing.T) {
-	program, err := parser.Parse("var1 : int;")
+	program, err := parser.NewParser(strings.NewReader("var1 : int;")).ParseProgram()
 	require.NoError(t, err)
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
@@ -20,7 +21,7 @@ func TestDeclarationOneID(t *testing.T) {
 }
 
 func TestDeclarationMultipeIDs(t *testing.T) {
-	program, err := parser.Parse("var1, var2, var3 : float;")
+	program, err := parser.NewParser(strings.NewReader("var1, var2, var3 : float;")).ParseProgram()
 	require.NoError(t, err)
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
@@ -30,12 +31,18 @@ func TestDeclarationMultipeIDs(t *testing.T) {
 }
 
 func TestDeclarationInvalidType(t *testing.T) {
-	_, err := parser.Parse("var1, var2, var3 : uu;")
-	assert.Error(t, err)
+	program, errors := parser.Parse("var1, var2, var3 : uu;")
+	assert.Len(t, errors, 1)
+	assert.EqualValues(t, program, &parser.Program{
+		Declarations: []parser.Declaration{
+			parser.Declaration{Names: []string{"var1", "var2", "var3"}, Type: parser.Unknown},
+		},
+	})
 }
 
 func TestMultipleDeclarations(t *testing.T) {
-	program, err := parser.Parse("var1, var2 : int; var3 : float; var4,var5:int;")
+	program, err := parser.NewParser(
+		strings.NewReader("var1, var2 : int; var3 : float; var4,var5:int;")).ParseProgram()
 	require.NoError(t, err)
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
@@ -262,4 +269,56 @@ func TestExpressionWithVariables(t *testing.T) {
 		Operator: parser.Divide,
 		RHS:      &parser.VariableExpression{Variable: "c"},
 	}, expr)
+}
+
+func TestErrorRecoveryOneToken(t *testing.T) {
+	program, errors := parser.Parse("var1 : uu int;")
+	assert.EqualValues(t, errors, []error{
+		&parser.ParseError{Expected: []string{}, Found: "uu",
+			Pos: lexer.Position{Line: 0, Column: 7}},
+	})
+	assert.EqualValues(t, &parser.Program{
+		Declarations: []parser.Declaration{
+			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
+		},
+	}, program)
+}
+
+func TestErrorRecoveryMultipleTokens(t *testing.T) {
+	program, errors := parser.Parse("var1 : kk  * * / break hello int;")
+	assert.EqualValues(t, errors, []error{
+		&parser.ParseError{Expected: []string{}, Found: "kk",
+			Pos: lexer.Position{Line: 0, Column: 7}},
+	})
+	assert.EqualValues(t, &parser.Program{
+		Declarations: []parser.Declaration{
+			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
+		},
+	}, program)
+}
+
+func TestErrorRecoveryMultipleTokensAndDeclarations(t *testing.T) {
+	program, errors := parser.Parse("var1 : kk  * * / break hello int; var2: x float;")
+	assert.EqualValues(t, errors, []error{
+		&parser.ParseError{Expected: []string{}, Found: "kk", Pos: lexer.Position{Line: 0, Column: 7}},
+		&parser.ParseError{Expected: []string{}, Found: "x", Pos: lexer.Position{Line: 0, Column: 40}},
+	})
+	assert.EqualValues(t, &parser.Program{
+		Declarations: []parser.Declaration{
+			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
+			parser.Declaration{Names: []string{"var2"}, Type: parser.Float},
+		},
+	}, program)
+}
+
+func TestErrorRecoveryEOF(t *testing.T) {
+	program, errors := parser.Parse("var1 : int")
+	assert.EqualValues(t, errors, []error{
+		&parser.ParseError{Expected: []string{";"}, Found: "EOF", Pos: lexer.Position{Line: 0, Column: 11}},
+	})
+	assert.EqualValues(t, &parser.Program{
+		Declarations: []parser.Declaration{
+			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
+		},
+	}, program)
 }

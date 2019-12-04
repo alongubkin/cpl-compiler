@@ -83,8 +83,8 @@ func (s *Scanner) curr() (ch rune, pos Position) {
 	return buffer.ch, buffer.position
 }
 
-// unread pushes the previously read rune back onto the buffer.
-func (s *Scanner) unread() {
+// Unscan pushes the previously token back onto the buffer.
+func (s *Scanner) Unscan() {
 	s.bufferSize++
 }
 
@@ -102,7 +102,7 @@ func (s *Scanner) Scan() Token {
 					return Token{TokenType: ILLEGAL, Lexeme: "", Position: pos}
 				}
 			} else {
-				s.unread()
+				s.Unscan()
 				break
 			}
 		} else if isWhitespace(ch) {
@@ -116,17 +116,17 @@ func (s *Scanner) Scan() Token {
 
 	// If we see a letter then consume as an ID or reserved word.
 	if isLetter(ch) {
-		s.unread()
+		s.Unscan()
 		return s.scanIdentifier()
 	} else if isDigit(ch) {
-		s.unread()
+		s.Unscan()
 		return s.scanNumber()
 	}
 
 	// Otherwise read the individual character.
 	switch ch {
 	case eof:
-		return Token{TokenType: EOF, Lexeme: "", Position: pos}
+		return Token{TokenType: EOF, Lexeme: "EOF", Position: pos}
 
 	case '>', '<':
 		ch2, _ := s.read()
@@ -134,7 +134,7 @@ func (s *Scanner) Scan() Token {
 			return Token{TokenType: RELOP, Lexeme: string(ch) + string(ch2), Position: pos}
 		}
 
-		s.unread()
+		s.Unscan()
 		return Token{TokenType: RELOP, Lexeme: string(ch), Position: pos}
 
 	case '=':
@@ -143,7 +143,7 @@ func (s *Scanner) Scan() Token {
 			return Token{TokenType: RELOP, Lexeme: "==", Position: pos}
 		}
 
-		s.unread()
+		s.Unscan()
 		return Token{TokenType: EQUALS, Lexeme: string(ch), Position: pos}
 
 	case '!':
@@ -152,7 +152,7 @@ func (s *Scanner) Scan() Token {
 			return Token{TokenType: RELOP, Lexeme: "!=", Position: pos}
 		}
 
-		s.unread()
+		s.Unscan()
 		return Token{TokenType: NOT, Lexeme: string(ch), Position: pos}
 
 	case '|':
@@ -161,7 +161,7 @@ func (s *Scanner) Scan() Token {
 			return Token{TokenType: OR, Lexeme: "||", Position: pos}
 		}
 
-		s.unread()
+		s.Unscan()
 		return Token{TokenType: ILLEGAL, Lexeme: string(ch), Position: pos}
 
 	case '&':
@@ -170,7 +170,7 @@ func (s *Scanner) Scan() Token {
 			return Token{TokenType: AND, Lexeme: "&&", Position: pos}
 		}
 
-		s.unread()
+		s.Unscan()
 		return Token{TokenType: ILLEGAL, Lexeme: string(ch), Position: pos}
 
 	case '+', '-':
@@ -212,7 +212,7 @@ func (s *Scanner) scanWhitespace() {
 		if ch, _ := s.read(); ch == eof {
 			break
 		} else if !isWhitespace(ch) {
-			s.unread()
+			s.Unscan()
 			break
 		}
 	}
@@ -232,7 +232,7 @@ func (s *Scanner) scanIdentifier() Token {
 		if ch, _ = s.read(); ch == eof {
 			break
 		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' {
-			s.unread()
+			s.Unscan()
 			break
 		} else {
 			_, _ = buf.WriteRune(ch)
@@ -283,7 +283,7 @@ func (s *Scanner) scanNumber() Token {
 
 	for {
 		if !isDigit(ch) && ch != '.' {
-			s.unread()
+			s.Unscan()
 			break
 		}
 		_, _ = buf.WriteRune(ch)
