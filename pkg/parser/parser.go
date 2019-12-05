@@ -441,9 +441,9 @@ func (p *Parser) ParseSwitchCases() []SwitchCase {
 
 		// NUM
 		if token, ok := p.match(lexer.NUM); ok {
-			value, err := strconv.ParseFloat(token.Lexeme, 64)
+			value, err := strconv.ParseInt(token.Lexeme, 10, 64)
 			if err != nil {
-				p.addError(ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)})
+				p.addError(ParseError{Message: fmt.Sprintf("%s is not an int", token.Lexeme)})
 			}
 
 			item.Value = value

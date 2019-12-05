@@ -104,7 +104,7 @@ type SwitchStatement struct {
 
 // SwitchCase represents a flow for a specific value in a switch statement.
 type SwitchCase struct {
-	Value      float64
+	Value      int64
 	Statements []Statement
 }
 
