@@ -152,7 +152,7 @@ func TestFloatToIntAssignment(t *testing.T) {
 	})
 
 	assert.EqualValues(t, []codegen.Error{codegen.Error{
-		Message: "Cannot assign int value to variable x of type float."}}, c.Errors)
+		Message: "Cannot assign float value to int variable x."}}, c.Errors)
 	assert.EqualValues(t, ``, buf.String())
 }
 
@@ -202,7 +202,7 @@ func TestFloatByCastToIntAssignment(t *testing.T) {
 	})
 
 	assert.EqualValues(t, []codegen.Error{codegen.Error{
-		Message: "Cannot assign int value to variable x of type float."}}, c.Errors)
+		Message: "Cannot assign float value to int variable x."}}, c.Errors)
 }
 
 func TestCompareIntegersEquality(t *testing.T) {

@@ -9,7 +9,7 @@ i, j : int;
    i = static_cast(int)a;
    output(i);
    
-   i = (int) j;
+   i = static_cast(int) j;
    output(i);
    
    i = 16;

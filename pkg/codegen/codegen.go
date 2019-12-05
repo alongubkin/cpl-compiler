@@ -96,6 +96,10 @@ func (c *CodeGenerator) CodegenAssignmentStatement(node *parser.AssignmentStatem
 		return
 	}
 
+	if exp == nil {
+		return
+	}
+
 	// Cast type if there's a static_cast
 	if node.CastType != parser.Unknown && node.CastType != exp.Type {
 		exp = c.codegenCastExpression(exp, node.CastType)
@@ -104,7 +108,7 @@ func (c *CodeGenerator) CodegenAssignmentStatement(node *parser.AssignmentStatem
 	// Make sure the expression's type is okay
 	if c.Variables[node.Variable] == parser.Integer && exp.Type == parser.Float {
 		c.Errors = append(c.Errors, Error{Message: fmt.Sprintf(
-			"Cannot assign int value to variable %s of type float.", node.Variable)})
+			"Cannot assign float value to int variable %s.", node.Variable)})
 		return
 	}
 
@@ -140,6 +144,10 @@ func (c *CodeGenerator) CodegenInputStatement(node *parser.InputStatement) {
 // CodegenOutputStatement generates code for output statements.
 func (c *CodeGenerator) CodegenOutputStatement(node *parser.OutputStatement) {
 	exp := c.CodegenExpression(node.Value)
+	if exp == nil {
+		return
+	}
+
 	if exp.Type == parser.Integer {
 		c.output.WriteString(fmt.Sprintf("IPRT %s\n", exp.Code))
 	} else if exp.Type == parser.Float {
@@ -200,6 +208,10 @@ func (c *CodeGenerator) CodegenSwitchStatement(node *parser.SwitchStatement) {
 	if exp.Type != parser.Integer {
 		c.Errors = append(c.Errors, Error{Message: fmt.Sprintf(
 			"Switch expression must be an integer.")})
+	}
+
+	if exp == nil {
+		return
 	}
 
 	// Make sure the evalutaed expression is in a variable (and it's not a literal).

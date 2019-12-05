@@ -1,0 +1,32 @@
+RINP a
+IINP i
+ITOR _t1 i
+REQL _t2 a _t1
+ITOR _t3 i
+RGRT _t4 a _t3
+IADD _t5 _t2 _t4
+IGRT _t5 _t5 0
+JMPZ 15 _t5
+ITOR _t7 i
+RSUB _t6 a _t7
+RASN b _t6
+RPRT b
+JUMP 18
+ITOR _t9 i
+RMLT _t8 _t9 a
+RPRT _t8
+RADD _t10 3.000000 5.800000
+RTOI _t11 _t10
+IASN i _t11
+IPRT i
+IADD _t12 3 5
+IASN i _t12
+IPRT i
+IADD _t13 3 5
+ITOR _t14 _t13
+RASN a _t14
+RPRT a
+RADD _t15 3.000000 5.000000
+RASN a _t15
+RPRT a
+HALT

@@ -1,38 +1,32 @@
 IASN b 0
-@1:
-IEQL $t1 b 0
-JMPZ @2 $t1
+IEQL _t1 b 0
+JMPZ 15 _t1
 IINP a
-IGRT $t2 a 0
-IEQL $t3 a 1000
-ILSS $t4 a 1000
-IADD $t5 $t3 $t4
-IGRT $t5 $t5 0
-IMLT $t6 $t2 $t5
-JMPZ @4 $t6
+IGRT _t2 a 0
+IEQL _t3 a 1000
+ILSS _t4 a 1000
+IADD _t5 _t3 _t4
+IGRT _t5 _t5 0
+IMLT _t6 _t2 _t5
+JMPZ 14 _t6
 IASN b 1
-JUMP @3
-@4:
-@3:
-JUMP @1
-@2:
+JUMP 14
+JUMP 2
 IASN ten 1
 IASN b 0
-@5:
-IGRT $t7 a 0
-JMPZ @6 $t7
-IDIV $t8 a 2
-IMLT $t9 $t8 2
-ISUB $t10 a $t9
-IASN temp $t10
-IMLT $t11 temp ten
-IADD $t12 b $t11
-IASN b $t12
-IMLT $t13 ten 10
-IASN ten $t13
-IDIV $t14 a 2
-IASN a $t14
-JUMP @5
-@6:
+IGRT _t7 a 0
+JMPZ 31 _t7
+IDIV _t8 a 2
+IMLT _t9 _t8 2
+ISUB _t10 a _t9
+IASN temp _t10
+IMLT _t11 temp ten
+IADD _t12 b _t11
+IASN b _t12
+IMLT _t13 ten 10
+IASN ten _t13
+IDIV _t14 a 2
+IASN a _t14
+JUMP 17
 IPRT b
 HALT

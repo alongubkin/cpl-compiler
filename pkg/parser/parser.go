@@ -58,8 +58,12 @@ func (p *Parser) match(tokenTypes ...lexer.TokenType) (*lexer.Token, bool) {
 		token, ok := p.matchToken(tokenTypes...)
 		if ok {
 			// A token was found! Continue parsing from here.
-			// TODO: Add support for token types
-			p.addError(newParseError(nextRealToken.Lexeme, []string{}, nextRealToken.Position))
+			expected := []string{}
+			for _, tokenType := range tokenTypes {
+				expected = append(expected, tokenType.String())
+			}
+
+			p.addError(newParseError(nextRealToken.Lexeme, expected, nextRealToken.Position))
 			return token, true
 		} else if token.TokenType == lexer.EOF {
 			break

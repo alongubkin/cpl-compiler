@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// TODO: Comment
+// MaxIdentifierLength is the maximum length of IDs in CPL.
 const MaxIdentifierLength = 9
 
 // Scanner represents a lexical scanner.
@@ -304,7 +304,6 @@ func (s *Scanner) skipUntilEndComment() error {
 				return nil
 			} else if ch2 == '*' {
 				// We are back in the state machine since we see a star.
-				// TODO: Remove goto
 				goto star
 			} else if ch2 == eof {
 				return io.EOF
