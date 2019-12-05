@@ -1,0 +1,38 @@
+IASN b 0
+@1:
+IEQL $t1 b 0
+JMPZ @2 $t1
+IINP a
+IGRT $t2 a 0
+IEQL $t3 a 1000
+ILSS $t4 a 1000
+IADD $t5 $t3 $t4
+IGRT $t5 $t5 0
+IMLT $t6 $t2 $t5
+JMPZ @4 $t6
+IASN b 1
+JUMP @3
+@4:
+@3:
+JUMP @1
+@2:
+IASN ten 1
+IASN b 0
+@5:
+IGRT $t7 a 0
+JMPZ @6 $t7
+IDIV $t8 a 2
+IMLT $t9 $t8 2
+ISUB $t10 a $t9
+IASN temp $t10
+IMLT $t11 temp ten
+IADD $t12 b $t11
+IASN b $t12
+IMLT $t13 ten 10
+IASN ten $t13
+IDIV $t14 a 2
+IASN a $t14
+JUMP @5
+@6:
+IPRT b
+HALT

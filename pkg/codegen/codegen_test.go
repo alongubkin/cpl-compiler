@@ -22,8 +22,8 @@ func TestCodegenAddExpression(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, "IADD $t1 5 x", buf.String())
-	assert.EqualValues(t, exp, &codegen.Expression{Code: "$t1", Type: parser.Integer})
+	assert.EqualValues(t, "IADD _t1 5 x", buf.String())
+	assert.EqualValues(t, exp, &codegen.Expression{Code: "_t1", Type: parser.Integer})
 }
 
 func TestCodegenAddExpressionVariableNotExists(t *testing.T) {
@@ -62,10 +62,10 @@ func TestCodegenComplexAddExpression(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IADD $t1 10 y
-IADD $t2 16 $t1
-IADD $t3 $t2 x`, buf.String())
-	assert.EqualValues(t, exp, &codegen.Expression{Code: "$t3", Type: parser.Integer})
+	assert.EqualValues(t, `IADD _t1 10 y
+IADD _t2 16 _t1
+IADD _t3 _t2 x`, buf.String())
+	assert.EqualValues(t, exp, &codegen.Expression{Code: "_t3", Type: parser.Integer})
 }
 
 func TestCodegenComplexExpression(t *testing.T) {
@@ -90,10 +90,10 @@ func TestCodegenComplexExpression(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IMLT $t1 10 y
-ITOR $t3 $t1
-RSUB $t2 16.500000 $t3
-RDIV $t4 $t2 x`, buf.String())
+	assert.EqualValues(t, `IMLT _t1 10 y
+ITOR _t3 _t1
+RSUB _t2 16.500000 _t3
+RDIV _t4 _t2 x`, buf.String())
 }
 
 func TestVariableType(t *testing.T) {
@@ -118,11 +118,11 @@ func TestVariableType(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `ITOR $t2 10
-RMLT $t1 $t2 y
-ITOR $t4 16
-RSUB $t3 $t4 $t1
-RDIV $t5 $t3 x`, buf.String())
+	assert.EqualValues(t, `ITOR _t2 10
+RMLT _t1 _t2 y
+ITOR _t4 16
+RSUB _t3 _t4 _t1
+RDIV _t5 _t3 x`, buf.String())
 }
 
 func TestSimpleAssignment(t *testing.T) {
@@ -168,8 +168,8 @@ func TestIntToFloat(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `ITOR $t1 5
-RASN x $t1`, buf.String())
+	assert.EqualValues(t, `ITOR _t1 5
+RASN x _t1`, buf.String())
 }
 
 func TestFloatToIntAssignmentWithCast(t *testing.T) {
@@ -185,8 +185,8 @@ func TestFloatToIntAssignmentWithCast(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `RTOI $t1 5.000000
-IASN x $t1`, buf.String())
+	assert.EqualValues(t, `RTOI _t1 5.000000
+IASN x _t1`, buf.String())
 }
 
 func TestFloatByCastToIntAssignment(t *testing.T) {
@@ -219,7 +219,7 @@ func TestCompareIntegersEquality(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IEQL $t1 x y`, buf.String())
+	assert.EqualValues(t, `IEQL _t1 x y`, buf.String())
 }
 
 func TestCompareFloatsInequality(t *testing.T) {
@@ -236,7 +236,7 @@ func TestCompareFloatsInequality(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `RNQL $t1 x y`, buf.String())
+	assert.EqualValues(t, `RNQL _t1 x y`, buf.String())
 }
 
 func TestCompareIntegerLessThanFloat(t *testing.T) {
@@ -253,8 +253,8 @@ func TestCompareIntegerLessThanFloat(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `ITOR $t1 x
-RLSS $t2 $t1 y`, buf.String())
+	assert.EqualValues(t, `ITOR _t1 x
+RLSS _t2 _t1 y`, buf.String())
 }
 
 func TestCompareFloatGreaterThanFloat(t *testing.T) {
@@ -271,8 +271,8 @@ func TestCompareFloatGreaterThanFloat(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `ITOR $t1 y
-RGRT $t2 x $t1`, buf.String())
+	assert.EqualValues(t, `ITOR _t1 y
+RGRT _t2 x _t1`, buf.String())
 }
 
 func TestOrExpression(t *testing.T) {
@@ -296,10 +296,10 @@ func TestOrExpression(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IGRT $t1 x y
-IEQL $t2 y x
-IADD $t3 $t1 $t2
-IGRT $t3 $t3 0`, buf.String())
+	assert.EqualValues(t, `IGRT _t1 x y
+IEQL _t2 y x
+IADD _t3 _t1 _t2
+IGRT _t3 _t3 0`, buf.String())
 }
 
 func TestAndExpression(t *testing.T) {
@@ -323,9 +323,9 @@ func TestAndExpression(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IGRT $t1 x y
-IEQL $t2 y x
-IMLT $t3 $t1 $t2`, buf.String())
+	assert.EqualValues(t, `IGRT _t1 x y
+IEQL _t2 y x
+IMLT _t3 _t1 _t2`, buf.String())
 }
 
 func TestOrAndExpression(t *testing.T) {
@@ -355,12 +355,12 @@ func TestOrAndExpression(t *testing.T) {
 		}})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IGRT $t1 x y
-IEQL $t2 y x
-IMLT $t3 $t1 $t2
-INQL $t4 y x
-IADD $t5 $t3 $t4
-IGRT $t5 $t5 0`, buf.String())
+	assert.EqualValues(t, `IGRT _t1 x y
+IEQL _t2 y x
+IMLT _t3 _t1 _t2
+INQL _t4 y x
+IADD _t5 _t3 _t4
+IGRT _t5 _t5 0`, buf.String())
 }
 
 func TestAndFloatExpression(t *testing.T) {
@@ -384,11 +384,11 @@ func TestAndFloatExpression(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `ITOR $t1 x
-RGRT $t2 $t1 y
-ITOR $t3 x
-REQL $t4 y $t3
-IMLT $t5 $t2 $t4`, buf.String())
+	assert.EqualValues(t, `ITOR _t1 x
+RGRT _t2 _t1 y
+ITOR _t3 x
+REQL _t4 y _t3
+IMLT _t5 _t2 _t4`, buf.String())
 }
 
 func TestNotAndFloatExpression(t *testing.T) {
@@ -413,12 +413,12 @@ func TestNotAndFloatExpression(t *testing.T) {
 		}})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `ITOR $t1 x
-RGRT $t2 $t1 y
-ITOR $t3 x
-REQL $t4 y $t3
-IMLT $t5 $t2 $t4
-ISUB $t6 1 $t5`, buf.String())
+	assert.EqualValues(t, `ITOR _t1 x
+RGRT _t2 _t1 y
+ITOR _t3 x
+REQL _t4 y _t3
+IMLT _t5 _t2 _t4
+ISUB _t6 1 _t5`, buf.String())
 }
 
 func TestCompareGreaterThanOrEqualTo(t *testing.T) {
@@ -435,10 +435,10 @@ func TestCompareGreaterThanOrEqualTo(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IEQL $t1 x y
-IGRT $t2 x y
-IADD $t3 $t1 $t2
-IGRT $t3 $t3 0`, buf.String())
+	assert.EqualValues(t, `IEQL _t1 x y
+IGRT _t2 x y
+IADD _t3 _t1 _t2
+IGRT _t3 _t3 0`, buf.String())
 }
 
 func TestCompareLessThanOrEqualTo(t *testing.T) {
@@ -455,10 +455,10 @@ func TestCompareLessThanOrEqualTo(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IEQL $t1 x y
-ILSS $t2 x y
-IADD $t3 $t1 $t2
-IGRT $t3 $t3 0`, buf.String())
+	assert.EqualValues(t, `IEQL _t1 x y
+ILSS _t2 x y
+IADD _t3 _t1 _t2
+IGRT _t3 _t3 0`, buf.String())
 }
 
 func TestInputInteger(t *testing.T) {
@@ -542,8 +542,8 @@ func TestIfElse(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IEQL $t1 0 1
-JMPZ @2 $t1
+	assert.EqualValues(t, `IEQL _t1 0 1
+JMPZ @2 _t1
 RINP x
 JUMP @1
 @2:
@@ -577,13 +577,13 @@ func TestIfElseIfElse(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IEQL $t1 0 1
-JMPZ @2 $t1
+	assert.EqualValues(t, `IEQL _t1 0 1
+JMPZ @2 _t1
 RINP x
 JUMP @1
 @2:
-IEQL $t2 0 1
-JMPZ @4 $t2
+IEQL _t2 0 1
+JMPZ @4 _t2
 RINP x
 JUMP @3
 @4:
@@ -619,8 +619,8 @@ func TestWhileLoop(t *testing.T) {
 
 	assert.Empty(t, c.Errors)
 	assert.EqualValues(t, `@1:
-IEQL $t1 0 1
-JMPZ @2 $t1
+IEQL _t1 0 1
+JMPZ @2 _t1
 RINP x
 JUMP @1
 @2:`, buf.String())
@@ -647,8 +647,8 @@ func TestWhileLoopWithBreak(t *testing.T) {
 
 	assert.Empty(t, c.Errors)
 	assert.EqualValues(t, `@1:
-IEQL $t1 0 1
-JMPZ @2 $t1
+IEQL _t1 0 1
+JMPZ @2 _t1
 RINP x
 JUMP @2
 JUMP @1
@@ -688,13 +688,13 @@ func TestNestedWhileLoopWithBreak(t *testing.T) {
 
 	assert.Empty(t, c.Errors)
 	assert.EqualValues(t, `@1:
-IEQL $t1 0 1
-JMPZ @2 $t1
+IEQL _t1 0 1
+JMPZ @2 _t1
 RINP x
 JUMP @2
 @3:
-INQL $t2 1 2
-JMPZ @4 $t2
+INQL _t2 1 2
+JMPZ @4 _t2
 RINP y
 JUMP @4
 JUMP @3
@@ -736,14 +736,14 @@ func TestSwitchStatement(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IASN $t1 x
-IEQL $t2 $t1 1
-JMPZ @2 $t2
+	assert.EqualValues(t, `IASN _t1 x
+IEQL _t2 _t1 1
+JMPZ @2 _t2
 IINP x
 JUMP @1
 @2:
-IEQL $t3 $t1 2
-JMPZ @3 $t3
+IEQL _t3 _t1 2
+JMPZ @3 _t3
 RINP y
 JUMP @1
 @3:

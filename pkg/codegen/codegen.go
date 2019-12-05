@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 
@@ -34,8 +35,18 @@ func NewCodeGenerator(output io.Writer) *CodeGenerator {
 	}
 }
 
+// Codegen generates code to an output file
+func Codegen(program *parser.Program) (string, []Error) {
+	buf := new(bytes.Buffer)
+
+	c := NewCodeGenerator(buf)
+	c.CodegenProgram(program)
+
+	return buf.String(), c.Errors
+}
+
 // CodegenProgram generates code for a CPL program.
-func (c *CodeGenerator) CodegenProgram(node parser.Program) {
+func (c *CodeGenerator) CodegenProgram(node *parser.Program) {
 	// Go over variable declarations
 	for _, declaration := range node.Declarations {
 		for _, name := range declaration.Names {
@@ -504,7 +515,7 @@ func (c *CodeGenerator) CodegenCompareBooleanExpression(node *parser.CompareBool
 
 func (c *CodeGenerator) getNewTemporary() string {
 	c.temporaryIndex++
-	return fmt.Sprintf("$t%d", c.temporaryIndex)
+	return fmt.Sprintf("_t%d", c.temporaryIndex)
 }
 
 func (c *CodeGenerator) getNewLabel() string {

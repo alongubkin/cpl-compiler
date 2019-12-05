@@ -1,0 +1,11 @@
+/* Min - Finding minimum between two numbers */
+a, b : int;
+{
+   input (a);
+   input (b);
+
+   if (a < b)
+     output(a);
+   else
+     output(b);
+}
