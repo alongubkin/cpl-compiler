@@ -63,9 +63,9 @@ func TestAddTwoLiteralsExpression(t *testing.T) {
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
-		LHS:      &parser.NumberLiteral{Value: 1},
+		LHS:      &parser.IntLiteral{Value: 1},
 		Operator: parser.Add,
-		RHS:      &parser.NumberLiteral{Value: 3},
+		RHS:      &parser.IntLiteral{Value: 3},
 	}, expr)
 }
 
@@ -76,15 +76,34 @@ func TestAddMultipleLiteralsExpression(t *testing.T) {
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS: &parser.ArithmeticExpression{
-				LHS:      &parser.NumberLiteral{Value: 1},
+				LHS:      &parser.IntLiteral{Value: 1},
 				Operator: parser.Add,
-				RHS:      &parser.NumberLiteral{Value: 3},
+				RHS:      &parser.IntLiteral{Value: 3},
 			},
 			Operator: parser.Add,
-			RHS:      &parser.NumberLiteral{Value: 7},
+			RHS:      &parser.IntLiteral{Value: 7},
 		},
 		Operator: parser.Add,
-		RHS:      &parser.NumberLiteral{Value: 10},
+		RHS:      &parser.IntLiteral{Value: 10},
+	}, expr)
+}
+
+func TestAddMultipleLiteralsFloatExpression(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("1 + 3.5 + 7. + 10.0001"))
+	expr := p.ParseExpression()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.ArithmeticExpression{
+		LHS: &parser.ArithmeticExpression{
+			LHS: &parser.ArithmeticExpression{
+				LHS:      &parser.IntLiteral{Value: 1},
+				Operator: parser.Add,
+				RHS:      &parser.FloatLiteral{Value: 3.5},
+			},
+			Operator: parser.Add,
+			RHS:      &parser.FloatLiteral{Value: 7},
+		},
+		Operator: parser.Add,
+		RHS:      &parser.FloatLiteral{Value: 10.0001},
 	}, expr)
 }
 
@@ -93,9 +112,9 @@ func TestSubtractTwoLiteralsExpression(t *testing.T) {
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
-		LHS:      &parser.NumberLiteral{Value: 1},
+		LHS:      &parser.IntLiteral{Value: 1},
 		Operator: parser.Subtract,
-		RHS:      &parser.NumberLiteral{Value: 3},
+		RHS:      &parser.IntLiteral{Value: 3},
 	}, expr)
 }
 
@@ -106,15 +125,15 @@ func TestSubtractMultipleLiteralsExpression(t *testing.T) {
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS: &parser.ArithmeticExpression{
-				LHS:      &parser.NumberLiteral{Value: 1},
+				LHS:      &parser.IntLiteral{Value: 1},
 				Operator: parser.Subtract,
-				RHS:      &parser.NumberLiteral{Value: 3},
+				RHS:      &parser.IntLiteral{Value: 3},
 			},
 			Operator: parser.Subtract,
-			RHS:      &parser.NumberLiteral{Value: 7},
+			RHS:      &parser.IntLiteral{Value: 7},
 		},
 		Operator: parser.Subtract,
-		RHS:      &parser.NumberLiteral{Value: 10},
+		RHS:      &parser.IntLiteral{Value: 10},
 	}, expr)
 }
 
@@ -124,12 +143,12 @@ func TestAddAndSubtractLiteralsExpression(t *testing.T) {
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
-			LHS:      &parser.NumberLiteral{Value: 1},
+			LHS:      &parser.IntLiteral{Value: 1},
 			Operator: parser.Add,
-			RHS:      &parser.NumberLiteral{Value: 3},
+			RHS:      &parser.IntLiteral{Value: 3},
 		},
 		Operator: parser.Subtract,
-		RHS:      &parser.NumberLiteral{Value: 5},
+		RHS:      &parser.IntLiteral{Value: 5},
 	}, expr)
 }
 
@@ -138,9 +157,9 @@ func TestMultiplyTwoLiteralsExpression(t *testing.T) {
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
-		LHS:      &parser.NumberLiteral{Value: 1},
+		LHS:      &parser.IntLiteral{Value: 1},
 		Operator: parser.Multiply,
-		RHS:      &parser.NumberLiteral{Value: 3},
+		RHS:      &parser.IntLiteral{Value: 3},
 	}, expr)
 }
 
@@ -151,15 +170,15 @@ func TestMultiplyMultipleLiteralsExpression(t *testing.T) {
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS: &parser.ArithmeticExpression{
-				LHS:      &parser.NumberLiteral{Value: 1},
+				LHS:      &parser.IntLiteral{Value: 1},
 				Operator: parser.Multiply,
-				RHS:      &parser.NumberLiteral{Value: 3},
+				RHS:      &parser.IntLiteral{Value: 3},
 			},
 			Operator: parser.Multiply,
-			RHS:      &parser.NumberLiteral{Value: 7},
+			RHS:      &parser.IntLiteral{Value: 7},
 		},
 		Operator: parser.Multiply,
-		RHS:      &parser.NumberLiteral{Value: 10},
+		RHS:      &parser.IntLiteral{Value: 10},
 	}, expr)
 }
 
@@ -168,9 +187,9 @@ func TestDivideTwoLiteralsExpression(t *testing.T) {
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
-		LHS:      &parser.NumberLiteral{Value: 1},
+		LHS:      &parser.IntLiteral{Value: 1},
 		Operator: parser.Divide,
-		RHS:      &parser.NumberLiteral{Value: 3},
+		RHS:      &parser.IntLiteral{Value: 3},
 	}, expr)
 }
 
@@ -181,15 +200,15 @@ func TestDivideMultipleLiteralsExpression(t *testing.T) {
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
 			LHS: &parser.ArithmeticExpression{
-				LHS:      &parser.NumberLiteral{Value: 1},
+				LHS:      &parser.IntLiteral{Value: 1},
 				Operator: parser.Divide,
-				RHS:      &parser.NumberLiteral{Value: 3},
+				RHS:      &parser.IntLiteral{Value: 3},
 			},
 			Operator: parser.Divide,
-			RHS:      &parser.NumberLiteral{Value: 7},
+			RHS:      &parser.IntLiteral{Value: 7},
 		},
 		Operator: parser.Divide,
-		RHS:      &parser.NumberLiteral{Value: 10},
+		RHS:      &parser.IntLiteral{Value: 10},
 	}, expr)
 }
 
@@ -199,12 +218,12 @@ func TestMultiplyAndDivideLiteralsExpression(t *testing.T) {
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
-			LHS:      &parser.NumberLiteral{Value: 1},
+			LHS:      &parser.IntLiteral{Value: 1},
 			Operator: parser.Multiply,
-			RHS:      &parser.NumberLiteral{Value: 3},
+			RHS:      &parser.IntLiteral{Value: 3},
 		},
 		Operator: parser.Divide,
-		RHS:      &parser.NumberLiteral{Value: 5},
+		RHS:      &parser.IntLiteral{Value: 5},
 	}, expr)
 }
 
@@ -213,12 +232,12 @@ func TestMultiplyAndAddLiteralsExpression(t *testing.T) {
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
-		LHS:      &parser.NumberLiteral{Value: 1},
+		LHS:      &parser.IntLiteral{Value: 1},
 		Operator: parser.Add,
 		RHS: &parser.ArithmeticExpression{
-			LHS:      &parser.NumberLiteral{Value: 3},
+			LHS:      &parser.IntLiteral{Value: 3},
 			Operator: parser.Multiply,
-			RHS:      &parser.NumberLiteral{Value: 5},
+			RHS:      &parser.IntLiteral{Value: 5},
 		},
 	}, expr)
 }
@@ -229,12 +248,12 @@ func TestAddAndMultiplyLiteralsExpression(t *testing.T) {
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
-			LHS:      &parser.NumberLiteral{Value: 1},
+			LHS:      &parser.IntLiteral{Value: 1},
 			Operator: parser.Multiply,
-			RHS:      &parser.NumberLiteral{Value: 3},
+			RHS:      &parser.IntLiteral{Value: 3},
 		},
 		Operator: parser.Add,
-		RHS:      &parser.NumberLiteral{Value: 5},
+		RHS:      &parser.IntLiteral{Value: 5},
 	}, expr)
 }
 
@@ -244,12 +263,12 @@ func TestParenthesisExpression(t *testing.T) {
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
-			LHS:      &parser.NumberLiteral{Value: 1},
+			LHS:      &parser.IntLiteral{Value: 1},
 			Operator: parser.Add,
-			RHS:      &parser.NumberLiteral{Value: 3},
+			RHS:      &parser.IntLiteral{Value: 3},
 		},
 		Operator: parser.Multiply,
-		RHS:      &parser.NumberLiteral{Value: 5},
+		RHS:      &parser.IntLiteral{Value: 5},
 	}, expr)
 }
 
@@ -259,16 +278,16 @@ func TestMultipleParenthesisExpression(t *testing.T) {
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
 		LHS: &parser.ArithmeticExpression{
-			LHS:      &parser.NumberLiteral{Value: 1},
+			LHS:      &parser.IntLiteral{Value: 1},
 			Operator: parser.Add,
 			RHS: &parser.ArithmeticExpression{
-				LHS:      &parser.NumberLiteral{Value: 3},
+				LHS:      &parser.IntLiteral{Value: 3},
 				Operator: parser.Add,
-				RHS:      &parser.NumberLiteral{Value: 7},
+				RHS:      &parser.IntLiteral{Value: 7},
 			},
 		},
 		Operator: parser.Multiply,
-		RHS:      &parser.NumberLiteral{Value: 5},
+		RHS:      &parser.IntLiteral{Value: 5},
 	}, expr)
 }
 
@@ -283,7 +302,7 @@ func TestExpressionWithVariables(t *testing.T) {
 			RHS: &parser.ArithmeticExpression{
 				LHS:      &parser.VariableExpression{Variable: "y"},
 				Operator: parser.Add,
-				RHS:      &parser.NumberLiteral{Value: 7},
+				RHS:      &parser.IntLiteral{Value: 7},
 			},
 		},
 		Operator: parser.Divide,
@@ -382,7 +401,7 @@ func TestProgramWithAssignmentStatements(t *testing.T) {
 		StatementsBlock: &parser.StatementsBlock{
 			Statements: []parser.Statement{
 				&parser.AssignmentStatement{Variable: "x", Value: &parser.ArithmeticExpression{
-					LHS:      &parser.NumberLiteral{Value: 5},
+					LHS:      &parser.IntLiteral{Value: 5},
 					Operator: parser.Multiply,
 					RHS: &parser.ArithmeticExpression{
 						LHS:      &parser.VariableExpression{Variable: "y"},
@@ -393,7 +412,7 @@ func TestProgramWithAssignmentStatements(t *testing.T) {
 				&parser.AssignmentStatement{Variable: "y", Value: &parser.ArithmeticExpression{
 					LHS:      &parser.VariableExpression{Variable: "x"},
 					Operator: parser.Add,
-					RHS:      &parser.NumberLiteral{Value: 5},
+					RHS:      &parser.IntLiteral{Value: 5},
 				}, CastType: parser.Float},
 			},
 		},
@@ -413,7 +432,7 @@ func TestOutputStatement(t *testing.T) {
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.OutputStatement{
 		Value: &parser.ArithmeticExpression{
-			LHS:      &parser.NumberLiteral{Value: 3},
+			LHS:      &parser.IntLiteral{Value: 3},
 			Operator: parser.Add,
 			RHS:      &parser.VariableExpression{Variable: "x"},
 		}}, statement)
@@ -427,18 +446,18 @@ func TestOrAndPrecedence(t *testing.T) {
 		LHS: &parser.CompareBooleanExpression{
 			LHS:      &parser.VariableExpression{Variable: "x"},
 			Operator: parser.LessThenOrEqualTo,
-			RHS:      &parser.NumberLiteral{Value: 5},
+			RHS:      &parser.IntLiteral{Value: 5},
 		},
 		RHS: &parser.AndBooleanExpression{
 			LHS: &parser.CompareBooleanExpression{
 				LHS:      &parser.VariableExpression{Variable: "y"},
 				Operator: parser.GreaterThanOrEqualTo,
-				RHS:      &parser.NumberLiteral{Value: 6},
+				RHS:      &parser.IntLiteral{Value: 6},
 			},
 			RHS: &parser.CompareBooleanExpression{
-				LHS:      &parser.NumberLiteral{Value: 3},
+				LHS:      &parser.IntLiteral{Value: 3},
 				Operator: parser.EqualTo,
-				RHS:      &parser.NumberLiteral{Value: 4},
+				RHS:      &parser.IntLiteral{Value: 4},
 			},
 		},
 	}, expr)
@@ -453,18 +472,18 @@ func TestAndOrPrecedence(t *testing.T) {
 			LHS: &parser.CompareBooleanExpression{
 				LHS:      &parser.VariableExpression{Variable: "x"},
 				Operator: parser.NotEqualTo,
-				RHS:      &parser.NumberLiteral{Value: 5},
+				RHS:      &parser.IntLiteral{Value: 5},
 			},
 			RHS: &parser.CompareBooleanExpression{
 				LHS:      &parser.VariableExpression{Variable: "y"},
 				Operator: parser.LessThan,
-				RHS:      &parser.NumberLiteral{Value: 6},
+				RHS:      &parser.IntLiteral{Value: 6},
 			},
 		},
 		RHS: &parser.CompareBooleanExpression{
-			LHS:      &parser.NumberLiteral{Value: 3},
+			LHS:      &parser.IntLiteral{Value: 3},
 			Operator: parser.EqualTo,
-			RHS:      &parser.NumberLiteral{Value: 4},
+			RHS:      &parser.IntLiteral{Value: 4},
 		},
 	}, expr)
 }
@@ -479,19 +498,19 @@ func TestNot(t *testing.T) {
 				LHS: &parser.CompareBooleanExpression{
 					LHS:      &parser.VariableExpression{Variable: "x"},
 					Operator: parser.GreaterThan,
-					RHS:      &parser.NumberLiteral{Value: 5},
+					RHS:      &parser.IntLiteral{Value: 5},
 				},
 				RHS: &parser.CompareBooleanExpression{
 					LHS:      &parser.VariableExpression{Variable: "y"},
 					Operator: parser.LessThan,
-					RHS:      &parser.NumberLiteral{Value: 6},
+					RHS:      &parser.IntLiteral{Value: 6},
 				},
 			},
 		},
 		RHS: &parser.CompareBooleanExpression{
-			LHS:      &parser.NumberLiteral{Value: 3},
+			LHS:      &parser.IntLiteral{Value: 3},
 			Operator: parser.EqualTo,
-			RHS:      &parser.NumberLiteral{Value: 4},
+			RHS:      &parser.IntLiteral{Value: 4},
 		},
 	}, expr)
 }
@@ -528,7 +547,7 @@ func TestElseIfStatement(t *testing.T) {
 				&parser.InputStatement{Variable: "x"},
 				&parser.AssignmentStatement{
 					Variable: "y",
-					Value:    &parser.NumberLiteral{Value: 7},
+					Value:    &parser.IntLiteral{Value: 7},
 				},
 			},
 		},
@@ -536,14 +555,14 @@ func TestElseIfStatement(t *testing.T) {
 			Condition: &parser.CompareBooleanExpression{
 				LHS:      &parser.VariableExpression{Variable: "x"},
 				Operator: parser.EqualTo,
-				RHS:      &parser.NumberLiteral{Value: 3},
+				RHS:      &parser.IntLiteral{Value: 3},
 			},
 			IfBranch: &parser.OutputStatement{
 				Value: &parser.VariableExpression{Variable: "y"},
 			},
 			ElseBranch: &parser.AssignmentStatement{
 				Variable: "t",
-				Value:    &parser.NumberLiteral{Value: 6},
+				Value:    &parser.IntLiteral{Value: 6},
 			},
 		},
 	}, statement)
@@ -566,7 +585,7 @@ func TestWhileStatement(t *testing.T) {
 				&parser.InputStatement{Variable: "x"},
 				&parser.AssignmentStatement{
 					Variable: "y",
-					Value:    &parser.NumberLiteral{Value: 7},
+					Value:    &parser.IntLiteral{Value: 7},
 				},
 			},
 		},

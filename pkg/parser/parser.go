@@ -653,12 +653,23 @@ func (p *Parser) ParseFactor() Expression {
 	case lexer.NUM:
 		token, _ := p.match(lexer.NUM)
 
-		value, err := strconv.ParseFloat(token.Lexeme, 64)
+		// If the number has a floating point (e.g 5.0), parse it as a float.
+		if strings.Contains(token.Lexeme, ".") {
+			value, err := strconv.ParseFloat(token.Lexeme, 64)
+			if err != nil {
+				p.addError(ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)})
+			}
+
+			return &FloatLiteral{Value: value}
+		}
+
+		// Otherwise, parse it as an integer.
+		value, err := strconv.ParseInt(token.Lexeme, 10, 64)
 		if err != nil {
 			p.addError(ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)})
 		}
 
-		return &NumberLiteral{Value: value}
+		return &IntLiteral{Value: value}
 
 	default:
 		p.addError(newParseError(p.lookahead.Lexeme, []string{"(", "ID", "NUM"},

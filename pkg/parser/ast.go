@@ -142,8 +142,13 @@ type VariableExpression struct {
 	Variable string
 }
 
-// NumberLiteral is an expression that contains a single constant number.
-type NumberLiteral struct {
+// IntLiteral is an expression that contains a single constant integer number.
+type IntLiteral struct {
+	Value int64
+}
+
+// FloatLiteral is an expression that contains a single constant integer number.
+type FloatLiteral struct {
 	Value float64
 }
 
@@ -191,7 +196,8 @@ func (*SwitchCase) node()               {}
 func (*BreakStatement) node()           {}
 func (*StatementsBlock) node()          {}
 func (*VariableExpression) node()       {}
-func (*NumberLiteral) node()            {}
+func (*IntLiteral) node()               {}
+func (*FloatLiteral) node()             {}
 func (*ArithmeticExpression) node()     {}
 func (*OrBooleanExpression) node()      {}
 func (*AndBooleanExpression) node()     {}
@@ -208,7 +214,8 @@ func (*BreakStatement) statement()      {}
 func (*StatementsBlock) statement()     {}
 
 func (*VariableExpression) expression()   {}
-func (*NumberLiteral) expression()        {}
+func (*IntLiteral) expression()           {}
+func (*FloatLiteral) expression()         {}
 func (*ArithmeticExpression) expression() {}
 
 func (*OrBooleanExpression) boolexpr()      {}
