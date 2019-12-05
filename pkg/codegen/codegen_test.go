@@ -36,7 +36,7 @@ func TestCodegenAddExpressionVariableNotExists(t *testing.T) {
 		RHS:      &parser.VariableExpression{Variable: "x"},
 	})
 
-	assert.EqualValues(t, []codegen.Error{codegen.Error{Message: "Undefined variable x."}}, c.Errors)
+	assert.EqualValues(t, []codegen.Error{codegen.Error{Message: "undefined variable x"}}, c.Errors)
 	assert.EqualValues(t, "", buf.String())
 }
 
@@ -152,7 +152,7 @@ func TestFloatToIntAssignment(t *testing.T) {
 	})
 
 	assert.EqualValues(t, []codegen.Error{codegen.Error{
-		Message: "Cannot assign float value to int variable x."}}, c.Errors)
+		Message: "cannot assign float value to int variable x"}}, c.Errors)
 	assert.EqualValues(t, ``, buf.String())
 }
 
@@ -202,7 +202,7 @@ func TestFloatByCastToIntAssignment(t *testing.T) {
 	})
 
 	assert.EqualValues(t, []codegen.Error{codegen.Error{
-		Message: "Cannot assign float value to int variable x."}}, c.Errors)
+		Message: "cannot assign float value to int variable x"}}, c.Errors)
 }
 
 func TestCompareIntegersEquality(t *testing.T) {
@@ -497,7 +497,7 @@ func TestInputVariableNotExists(t *testing.T) {
 		Variable: "x",
 	})
 
-	assert.EqualValues(t, []codegen.Error{codegen.Error{Message: "Undefined variable x."}}, c.Errors)
+	assert.EqualValues(t, []codegen.Error{codegen.Error{Message: "undefined variable x"}}, c.Errors)
 }
 
 func TestOutputInteger(t *testing.T) {
@@ -598,7 +598,7 @@ func TestBreakStatementNoContext(t *testing.T) {
 	c := codegen.NewCodeGenerator(buf)
 	c.CodegenStatement(&parser.BreakStatement{})
 	assert.EqualValues(t, []codegen.Error{codegen.Error{
-		Message: "Break statement must be inside a while loop or a switch case."}}, c.Errors)
+		Message: "break statement must be inside a while loop or a switch case"}}, c.Errors)
 }
 
 func TestWhileLoop(t *testing.T) {
@@ -736,18 +736,19 @@ func TestSwitchStatement(t *testing.T) {
 	})
 
 	assert.Empty(t, c.Errors)
-	assert.EqualValues(t, `IASN _t1 x
-IEQL _t2 _t1 1
-JMPZ @2 _t2
+	assert.EqualValues(t, `INQL _t1 x 1
+JMPZ @1 _t1
+INQL _t1 x 2
+JMPZ @2 _t1
+JUMP @3
+@1:
 IINP x
-JUMP @1
+JUMP @4
 @2:
-IEQL _t3 _t1 2
-JMPZ @3 _t3
 RINP y
-JUMP @1
+JUMP @4
 @3:
 IINP x
-JUMP @1
-@1:`, buf.String())
+JUMP @4
+@4:`, buf.String())
 }

@@ -1,0 +1,25 @@
+x, y : int;
+
+{
+  input(x);
+
+  if (x == 6) {
+    output(6);
+  }
+  switch (x) {
+    case 6:
+      output(6);
+      break;
+
+    case 7:
+    case 8:
+      output(9);
+      break;
+
+    default:
+      output(0);
+      break;
+  }
+
+  output(999);
+}

@@ -1,6 +1,8 @@
 package parser_test
 
 import (
+	"bufio"
+	"io"
 	"strings"
 	"testing"
 
@@ -21,7 +23,7 @@ func TestEmptyProgram(t *testing.T) {
 }
 
 func TestDeclarationOneID(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("var1 : int;"))
+	p := newParserNoPositions(strings.NewReader("var1 : int;"))
 	declarations := p.ParseDeclarations()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, []parser.Declaration{
@@ -30,7 +32,7 @@ func TestDeclarationOneID(t *testing.T) {
 }
 
 func TestDeclarationMultipeIDs(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("var1, var2, var3 : float;"))
+	p := newParserNoPositions(strings.NewReader("var1, var2, var3 : float;"))
 	declarations := p.ParseDeclarations()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, []parser.Declaration{
@@ -39,7 +41,7 @@ func TestDeclarationMultipeIDs(t *testing.T) {
 }
 
 func TestDeclarationInvalidType(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("var1, var2, var3 : uu;"))
+	p := newParserNoPositions(strings.NewReader("var1, var2, var3 : uu;"))
 	declarations := p.ParseDeclarations()
 	assert.Len(t, p.Errors, 1)
 	assert.EqualValues(t, []parser.Declaration{
@@ -48,7 +50,7 @@ func TestDeclarationInvalidType(t *testing.T) {
 }
 
 func TestMultipleDeclarations(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("var1, var2 : int; var3 : float; var4,var5:int;"))
+	p := newParserNoPositions(strings.NewReader("var1, var2 : int; var3 : float; var4,var5:int;"))
 	declarations := p.ParseDeclarations()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, []parser.Declaration{
@@ -59,7 +61,7 @@ func TestMultipleDeclarations(t *testing.T) {
 }
 
 func TestAddTwoLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 + 3"))
+	p := newParserNoPositions(strings.NewReader("1 + 3"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -70,7 +72,7 @@ func TestAddTwoLiteralsExpression(t *testing.T) {
 }
 
 func TestAddMultipleLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 + 3 + 7 + 10"))
+	p := newParserNoPositions(strings.NewReader("1 + 3 + 7 + 10"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -89,7 +91,7 @@ func TestAddMultipleLiteralsExpression(t *testing.T) {
 }
 
 func TestAddMultipleLiteralsFloatExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 + 3.5 + 7. + 10.0001"))
+	p := newParserNoPositions(strings.NewReader("1 + 3.5 + 7. + 10.0001"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -108,7 +110,7 @@ func TestAddMultipleLiteralsFloatExpression(t *testing.T) {
 }
 
 func TestSubtractTwoLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 - 3"))
+	p := newParserNoPositions(strings.NewReader("1 - 3"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -119,7 +121,7 @@ func TestSubtractTwoLiteralsExpression(t *testing.T) {
 }
 
 func TestSubtractMultipleLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 - 3 - 7 - 10"))
+	p := newParserNoPositions(strings.NewReader("1 - 3 - 7 - 10"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -138,7 +140,7 @@ func TestSubtractMultipleLiteralsExpression(t *testing.T) {
 }
 
 func TestAddAndSubtractLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 + 3 - 5"))
+	p := newParserNoPositions(strings.NewReader("1 + 3 - 5"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -153,7 +155,7 @@ func TestAddAndSubtractLiteralsExpression(t *testing.T) {
 }
 
 func TestMultiplyTwoLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 * 3"))
+	p := newParserNoPositions(strings.NewReader("1 * 3"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -164,7 +166,7 @@ func TestMultiplyTwoLiteralsExpression(t *testing.T) {
 }
 
 func TestMultiplyMultipleLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 * 3 * 7 * 10"))
+	p := newParserNoPositions(strings.NewReader("1 * 3 * 7 * 10"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -183,7 +185,7 @@ func TestMultiplyMultipleLiteralsExpression(t *testing.T) {
 }
 
 func TestDivideTwoLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 / 3"))
+	p := newParserNoPositions(strings.NewReader("1 / 3"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -194,7 +196,7 @@ func TestDivideTwoLiteralsExpression(t *testing.T) {
 }
 
 func TestDivideMultipleLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 / 3 / 7 / 10"))
+	p := newParserNoPositions(strings.NewReader("1 / 3 / 7 / 10"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -213,7 +215,7 @@ func TestDivideMultipleLiteralsExpression(t *testing.T) {
 }
 
 func TestMultiplyAndDivideLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 * 3 / 5"))
+	p := newParserNoPositions(strings.NewReader("1 * 3 / 5"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -228,7 +230,7 @@ func TestMultiplyAndDivideLiteralsExpression(t *testing.T) {
 }
 
 func TestMultiplyAndAddLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 + 3 * 5"))
+	p := newParserNoPositions(strings.NewReader("1 + 3 * 5"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -243,7 +245,7 @@ func TestMultiplyAndAddLiteralsExpression(t *testing.T) {
 }
 
 func TestAddAndMultiplyLiteralsExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("1 * 3 + 5"))
+	p := newParserNoPositions(strings.NewReader("1 * 3 + 5"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -258,7 +260,7 @@ func TestAddAndMultiplyLiteralsExpression(t *testing.T) {
 }
 
 func TestParenthesisExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("(1 + 3) * 5"))
+	p := newParserNoPositions(strings.NewReader("(1 + 3) * 5"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -273,7 +275,7 @@ func TestParenthesisExpression(t *testing.T) {
 }
 
 func TestMultipleParenthesisExpression(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("(1 + (3 + 7)) * 5"))
+	p := newParserNoPositions(strings.NewReader("(1 + (3 + 7)) * 5"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -292,7 +294,7 @@ func TestMultipleParenthesisExpression(t *testing.T) {
 }
 
 func TestExpressionWithVariables(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("(x + (y + 7)) / c"))
+	p := newParserNoPositions(strings.NewReader("(x + (y + 7)) / c"))
 	expr := p.ParseExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.ArithmeticExpression{
@@ -313,15 +315,19 @@ func TestExpressionWithVariables(t *testing.T) {
 func TestErrorRecoveryOneToken(t *testing.T) {
 	program, errors := parser.Parse("var1 : uu int; {}")
 	assert.EqualValues(t, errors, []parser.ParseError{
-		parser.ParseError{Expected: []string{}, Found: "uu",
+		parser.ParseError{Expected: []string{"int", "float"}, Found: "uu",
 			Pos: lexer.Position{Line: 0, Column: 7}},
 	})
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
-			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
+			parser.Declaration{
+				Names: []string{"var1"},
+				Type:  parser.Integer,
+			},
 		},
 		StatementsBlock: &parser.StatementsBlock{
 			Statements: []parser.Statement{},
+			Position:   lexer.Position{Line: 0, Column: 15},
 		},
 	}, program)
 }
@@ -329,7 +335,7 @@ func TestErrorRecoveryOneToken(t *testing.T) {
 func TestErrorRecoveryMultipleTokens(t *testing.T) {
 	program, errors := parser.Parse("var1 : kk  * * / break hello int;")
 	assert.EqualValues(t, errors, []parser.ParseError{
-		parser.ParseError{Expected: []string{}, Found: "kk", Pos: lexer.Position{Line: 0, Column: 7}},
+		parser.ParseError{Expected: []string{"int", "float"}, Found: "kk", Pos: lexer.Position{Line: 0, Column: 7}},
 		parser.ParseError{Expected: []string{"{"}, Found: "EOF", Pos: lexer.Position{Line: 0, Column: 33}},
 	})
 	assert.EqualValues(t, &parser.Program{
@@ -338,6 +344,7 @@ func TestErrorRecoveryMultipleTokens(t *testing.T) {
 		},
 		StatementsBlock: &parser.StatementsBlock{
 			Statements: []parser.Statement{},
+			Position:   lexer.Position{Line: 0, Column: 33},
 		},
 	}, program)
 }
@@ -345,17 +352,18 @@ func TestErrorRecoveryMultipleTokens(t *testing.T) {
 func TestErrorRecoveryMultipleTokensAndDeclarations(t *testing.T) {
 	program, errors := parser.Parse("var1 : kk  * * / break hello int; var2: x float;")
 	assert.EqualValues(t, errors, []parser.ParseError{
-		parser.ParseError{Expected: []string{}, Found: "kk", Pos: lexer.Position{Line: 0, Column: 7}},
-		parser.ParseError{Expected: []string{}, Found: "x", Pos: lexer.Position{Line: 0, Column: 40}},
+		parser.ParseError{Expected: []string{"int", "float"}, Found: "kk", Pos: lexer.Position{Line: 0, Column: 7}},
+		parser.ParseError{Expected: []string{"int", "float"}, Found: "x", Pos: lexer.Position{Line: 0, Column: 40}},
 		parser.ParseError{Expected: []string{"{"}, Found: "EOF", Pos: lexer.Position{Line: 0, Column: 48}},
 	})
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
-			parser.Declaration{Names: []string{"var2"}, Type: parser.Float},
+			parser.Declaration{Names: []string{"var2"}, Type: parser.Float, Position: lexer.Position{Line: 0, Column: 34}},
 		},
 		StatementsBlock: &parser.StatementsBlock{
 			Statements: []parser.Statement{},
+			Position:   lexer.Position{Line: 0, Column: 48},
 		},
 	}, program)
 }
@@ -371,6 +379,7 @@ func TestErrorRecoveryEOF(t *testing.T) {
 		},
 		StatementsBlock: &parser.StatementsBlock{
 			Statements: []parser.Statement{},
+			Position:   lexer.Position{Line: 0, Column: 12},
 		},
 	}, program)
 }
@@ -387,13 +396,16 @@ func TestErrorRecoveryTwiceWithEOF(t *testing.T) {
 		},
 		StatementsBlock: &parser.StatementsBlock{
 			Statements: []parser.Statement{},
+			Position:   lexer.Position{Line: 0, Column: 11},
 		},
 	}, program)
 }
 
 func TestProgramWithAssignmentStatements(t *testing.T) {
-	program, errors := parser.Parse("x , y : int; { x = 5 * (y + b); y = static_cast(float)(x + 5); }")
-	assert.Empty(t, errors)
+	p := newParserNoPositions(strings.NewReader(
+		"x , y : int; { x = 5 * (y + b); y = static_cast(float)(x + 5); }"))
+	program := p.ParseProgram()
+	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"x", "y"}, Type: parser.Integer},
@@ -420,14 +432,14 @@ func TestProgramWithAssignmentStatements(t *testing.T) {
 }
 
 func TestInputStatement(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("input(x);"))
+	p := newParserNoPositions(strings.NewReader("input(x);"))
 	statement := p.ParseStatement()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.InputStatement{Variable: "x"}, statement)
 }
 
 func TestOutputStatement(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("output(3 + x);"))
+	p := newParserNoPositions(strings.NewReader("output(3 + x);"))
 	statement := p.ParseStatement()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.OutputStatement{
@@ -439,7 +451,7 @@ func TestOutputStatement(t *testing.T) {
 }
 
 func TestOrAndPrecedence(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("x <= 5 || y >= 6 && 3 == 4"))
+	p := newParserNoPositions(strings.NewReader("x <= 5 || y >= 6 && 3 == 4"))
 	expr := p.ParseBooleanExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.OrBooleanExpression{
@@ -464,7 +476,7 @@ func TestOrAndPrecedence(t *testing.T) {
 }
 
 func TestAndOrPrecedence(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("x != 5 && y < 6 || 3 == 4"))
+	p := newParserNoPositions(strings.NewReader("x != 5 && y < 6 || 3 == 4"))
 	expr := p.ParseBooleanExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.OrBooleanExpression{
@@ -489,7 +501,7 @@ func TestAndOrPrecedence(t *testing.T) {
 }
 
 func TestNot(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("!(x > 5 && y < 6) || 3 == 4"))
+	p := newParserNoPositions(strings.NewReader("!(x > 5 && y < 6) || 3 == 4"))
 	expr := p.ParseBooleanExpression()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.OrBooleanExpression{
@@ -516,7 +528,7 @@ func TestNot(t *testing.T) {
 }
 
 func TestIfStatement(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("if (x == y) input(x); else output(y);"))
+	p := newParserNoPositions(strings.NewReader("if (x == y) input(x); else output(y);"))
 	statement := p.ParseStatement()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.IfStatement{
@@ -533,7 +545,7 @@ func TestIfStatement(t *testing.T) {
 }
 
 func TestElseIfStatement(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("if (x == y) { input(x); y = 7; } else if (x == 3) output(y); else t = 6;"))
+	p := newParserNoPositions(strings.NewReader("if (x == y) { input(x); y = 7; } else if (x == 3) output(y); else t = 6;"))
 	statement := p.ParseStatement()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.IfStatement{
@@ -569,7 +581,7 @@ func TestElseIfStatement(t *testing.T) {
 }
 
 func TestWhileStatement(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("while (!(x == y)) { input(x); y = 7; }"))
+	p := newParserNoPositions(strings.NewReader("while (!(x == y)) { input(x); y = 7; }"))
 	statement := p.ParseStatement()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.WhileStatement{
@@ -593,14 +605,14 @@ func TestWhileStatement(t *testing.T) {
 }
 
 func TestBreakStatement(t *testing.T) {
-	p := parser.NewParser(strings.NewReader("break;"))
+	p := newParserNoPositions(strings.NewReader("break;"))
 	statement := p.ParseStatement()
 	assert.Empty(t, p.Errors)
 	assert.EqualValues(t, &parser.BreakStatement{}, statement)
 }
 
 func TestSwitchStatement(t *testing.T) {
-	p := parser.NewParser(strings.NewReader(`
+	p := newParserNoPositions(strings.NewReader(`
 		switch (x + y) { 
 		case 5: 
 			output(x); 
@@ -647,4 +659,13 @@ func TestSwitchStatement(t *testing.T) {
 			&parser.BreakStatement{},
 		},
 	}, statement)
+}
+
+func newParserNoPositions(reader io.Reader) *parser.Parser {
+	scanner := &lexer.Scanner{
+		Reader:           bufio.NewReader(reader),
+		DisablePositions: true,
+	}
+
+	return parser.NewParser(scanner)
 }

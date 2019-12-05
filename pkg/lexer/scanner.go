@@ -12,7 +12,7 @@ const MaxIdentifierLength = 9
 
 // Scanner represents a lexical scanner.
 type Scanner struct {
-	reader      *bufio.Reader
+	Reader      *bufio.Reader
 	position    Position
 	eof         bool
 	bufferIndex int
@@ -21,12 +21,13 @@ type Scanner struct {
 		ch       rune
 		position Position
 	}
+	DisablePositions bool // for testing.
 }
 
 // NewScanner returns a new instance of Scanner.
 func NewScanner(reader io.Reader) *Scanner {
 	return &Scanner{
-		reader: bufio.NewReader(reader),
+		Reader: bufio.NewReader(reader),
 	}
 }
 
@@ -41,14 +42,14 @@ func (s *Scanner) read() (rune, Position) {
 
 	// Read next rune from underlying reader.
 	// Any error (including io.EOF) should return as EOF.
-	ch, _, err := s.reader.ReadRune()
+	ch, _, err := s.Reader.ReadRune()
 	if err != nil {
 		ch = eof
 	} else if ch == '\r' {
-		if ch, _, err := s.reader.ReadRune(); err != nil {
+		if ch, _, err := s.Reader.ReadRune(); err != nil {
 			// nop
 		} else if ch != '\n' {
-			_ = s.reader.UnreadRune()
+			_ = s.Reader.UnreadRune()
 		}
 		ch = '\n'
 	}
@@ -80,6 +81,11 @@ func (s *Scanner) read() (rune, Position) {
 func (s *Scanner) curr() (ch rune, pos Position) {
 	bufferIndex := (s.bufferIndex - s.bufferSize + len(s.buffer)) % len(s.buffer)
 	buffer := &s.buffer[bufferIndex]
+
+	if s.DisablePositions {
+		return buffer.ch, Position{}
+	}
+
 	return buffer.ch, buffer.position
 }
 

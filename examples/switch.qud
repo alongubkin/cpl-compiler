@@ -1,0 +1,21 @@
+IINP x
+IEQL _t1 x 6
+JMPZ 6 _t1
+IPRT 6
+JUMP 6
+INQL _t2 x 6
+JMPZ 13 _t2
+INQL _t2 x 7
+JMPZ 15 _t2
+INQL _t2 x 8
+JMPZ 15 _t2
+JUMP 17
+IPRT 6
+JUMP 19
+IPRT 9
+JUMP 19
+IPRT 0
+JUMP 19
+IPRT 999
+HALT
+CPL Compiler by Alon Gubkin

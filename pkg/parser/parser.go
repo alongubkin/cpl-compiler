@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
@@ -17,8 +16,7 @@ type Parser struct {
 }
 
 // NewParser returns a new instance of Parser.
-func NewParser(reader io.Reader) *Parser {
-	scanner := lexer.NewScanner(reader)
+func NewParser(scanner *lexer.Scanner) *Parser {
 	return &Parser{
 		Errors:    []ParseError{},
 		scanner:   scanner,
@@ -28,7 +26,7 @@ func NewParser(reader io.Reader) *Parser {
 
 // Parse parses a CPL program and returns its AST representation.
 func Parse(s string) (*Program, []ParseError) {
-	parser := NewParser(strings.NewReader(s))
+	parser := NewParser(lexer.NewScanner(strings.NewReader(s)))
 	return parser.ParseProgram(), parser.Errors
 }
 
@@ -62,6 +60,9 @@ func (p *Parser) match(tokenTypes ...lexer.TokenType) (*lexer.Token, bool) {
 			for _, tokenType := range tokenTypes {
 				expected = append(expected, tokenType.String())
 			}
+			nextRealToken := p.scanner.Scan()
+			print(nextRealToken.TokenType.String(), " -- ", nextRealToken.Lexeme, "\n")
+			panic("LOL")
 
 			p.addError(newParseError(nextRealToken.Lexeme, expected, nextRealToken.Position))
 			return token, true

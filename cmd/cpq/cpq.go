@@ -5,14 +5,17 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
-	"strings"
 
 	"github.com/alongubkin/cpl-compiler/pkg/codegen"
 	"github.com/alongubkin/cpl-compiler/pkg/parser"
 )
 
+// Signature of the author :)
+var Signature = "CPL Compiler by Alon Gubkin"
+
 func main() {
+	fmt.Fprintln(os.Stderr, Signature)
+
 	// Check args
 	if len(os.Args) != 2 {
 		fmt.Fprintln(os.Stderr, "USAGE: ./cpq <input-file>")
@@ -49,23 +52,6 @@ func main() {
 	if len(parseErrors) == 0 && len(codegenErrors) == 0 {
 		// Write output to the QUAD file
 		outfile := infile[0:len(infile)-3] + ".qud"
-		ioutil.WriteFile(outfile, []byte(fixLabels(output)), 0644)
+		ioutil.WriteFile(outfile, []byte(codegen.RemoveLabels(output)+"\n"+Signature), 0644)
 	}
-}
-
-func fixLabels(quad string) string {
-	labels := 0
-	for i, line := range strings.Split(quad, "\n") {
-		if strings.HasSuffix(line, ":") {
-			label := line[:len(line)-1]
-			// Delete label line
-			quad = strings.ReplaceAll(quad, line+"\n", "")
-
-			// Replace all label references with the correct line number
-			quad = strings.ReplaceAll(quad, label, strconv.Itoa(i-labels+1))
-			labels++
-		}
-	}
-
-	return quad
 }
