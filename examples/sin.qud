@@ -1,0 +1,39 @@
+RINP x
+RMLT _t1 x 3.141590
+ITOR _t3 180
+RDIV _t2 _t1 _t3
+RASN x _t2
+ITOR _t4 0
+RASN prevsine _t4
+RASN cursine x
+ITOR _t5 1
+RASN loopnum _t5
+RASN power x
+ITOR _t6 1
+RASN sign _t6
+RLSS _t7 0.000100 power
+ITOR _t8 200
+RLSS _t9 loopnum _t8
+IMLT _t10 _t7 _t9
+JMPZ 38 _t10
+ITOR _t12 2
+RADD _t11 loopnum _t12
+RASN loopnum _t11
+RMLT _t13 power x
+RMLT _t14 _t13 x
+ITOR _t16 1
+RSUB _t15 loopnum _t16
+RMLT _t17 loopnum _t15
+RDIV _t18 _t14 _t17
+RASN power _t18
+RASN prevsine cursine
+ISUB _t19 0 1
+ITOR _t21 _t19
+RMLT _t20 sign _t21
+RASN sign _t20
+RMLT _t22 sign power
+RADD _t23 cursine _t22
+RASN cursine _t23
+JUMP 14
+RPRT cursine
+HALT

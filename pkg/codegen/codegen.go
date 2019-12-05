@@ -51,7 +51,10 @@ func (c *CodeGenerator) CodegenProgram(node *parser.Program) {
 	for _, declaration := range node.Declarations {
 		for _, name := range declaration.Names {
 			if _, exists := c.Variables[name]; exists {
-				c.Errors = append(c.Errors, Error{Message: fmt.Sprintf("Variable %s already defined.", name)})
+				c.Errors = append(c.Errors, Error{
+					Message: fmt.Sprintf("variable %s already defined", name),
+					Pos:     declaration.Position,
+				})
 				continue
 			}
 
@@ -91,8 +94,10 @@ func (c *CodeGenerator) CodegenAssignmentStatement(node *parser.AssignmentStatem
 
 	// Make sure the variable is defined.
 	if _, exists := c.Variables[node.Variable]; !exists {
-		c.Errors = append(c.Errors, Error{Message: fmt.Sprintf(
-			"Undefined variable %s.", node.Variable)})
+		c.Errors = append(c.Errors, Error{
+			Message: fmt.Sprintf("undefined variable %s", node.Variable),
+			Pos:     node.Position,
+		})
 		return
 	}
 
@@ -107,8 +112,10 @@ func (c *CodeGenerator) CodegenAssignmentStatement(node *parser.AssignmentStatem
 
 	// Make sure the expression's type is okay
 	if c.Variables[node.Variable] == parser.Integer && exp.Type == parser.Float {
-		c.Errors = append(c.Errors, Error{Message: fmt.Sprintf(
-			"Cannot assign float value to int variable %s.", node.Variable)})
+		c.Errors = append(c.Errors, Error{
+			Message: fmt.Sprintf("cannot assign float value to int variable %s", node.Variable),
+			Pos:     node.Position,
+		})
 		return
 	}
 
@@ -129,8 +136,10 @@ func (c *CodeGenerator) CodegenAssignmentStatement(node *parser.AssignmentStatem
 func (c *CodeGenerator) CodegenInputStatement(node *parser.InputStatement) {
 	// Make sure the variable is defined.
 	if _, exists := c.Variables[node.Variable]; !exists {
-		c.Errors = append(c.Errors, Error{Message: fmt.Sprintf(
-			"Undefined variable %s.", node.Variable)})
+		c.Errors = append(c.Errors, Error{
+			Message: fmt.Sprintf("undefined variable %s", node.Variable),
+			Pos:     node.Position,
+		})
 		return
 	}
 
@@ -206,8 +215,10 @@ func (c *CodeGenerator) CodegenSwitchStatement(node *parser.SwitchStatement) {
 	// Evaluate expression
 	exp := c.CodegenExpression(node.Expression)
 	if exp.Type != parser.Integer {
-		c.Errors = append(c.Errors, Error{Message: fmt.Sprintf(
-			"Switch expression must be an integer.")})
+		c.Errors = append(c.Errors, Error{
+			Message: fmt.Sprintf("switch expression must be an integer"),
+			Pos:     node.Position,
+		})
 	}
 
 	if exp == nil {
@@ -252,8 +263,10 @@ func (c *CodeGenerator) CodegenSwitchStatement(node *parser.SwitchStatement) {
 // CodegenBreakStatement generates code for break statements.
 func (c *CodeGenerator) CodegenBreakStatement(node *parser.BreakStatement) {
 	if len(c.breakStack) == 0 {
-		c.Errors = append(c.Errors, Error{Message: fmt.Sprintf(
-			"Break statement must be inside a while loop or a switch case.")})
+		c.Errors = append(c.Errors, Error{
+			Message: fmt.Sprintf("break statement must be inside a while loop or a switch case"),
+			Pos:     node.Position,
+		})
 		return
 	}
 
@@ -339,8 +352,10 @@ func (c *CodeGenerator) CodegenArithmeticExpression(node *parser.ArithmeticExpre
 func (c *CodeGenerator) CodegenVariableExpression(node *parser.VariableExpression) *Expression {
 	// Make sure the variable is defined.
 	if _, exists := c.Variables[node.Variable]; !exists {
-		c.Errors = append(c.Errors, Error{Message: fmt.Sprintf(
-			"Undefined variable %s.", node.Variable)})
+		c.Errors = append(c.Errors, Error{
+			Message: fmt.Sprintf("undefined variable %s", node.Variable),
+			Pos:     node.Position,
+		})
 		return nil
 	}
 

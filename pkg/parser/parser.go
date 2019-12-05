@@ -87,7 +87,7 @@ func (p *Parser) match(tokenTypes ...lexer.TokenType) (*lexer.Token, bool) {
 // ParseProgram parses a CPL program and returns a Program AST object.
 // 	program -> declarations stmt_block
 func (p *Parser) ParseProgram() *Program {
-	program := &Program{}
+	program := &Program{Position: p.lookahead.Position}
 
 	// Parse declarations.
 	program.Declarations = p.ParseDeclarations()
@@ -117,7 +117,7 @@ func (p *Parser) ParseDeclarations() []Declaration {
 // ParseDeclaration parses a declaration and returns a Declaration AST object.
 // 	declaration -> idlist ':' type ';'
 func (p *Parser) ParseDeclaration() *Declaration {
-	declaration := &Declaration{}
+	declaration := &Declaration{Position: p.lookahead.Position}
 	declaration.Names = p.ParseIDList()
 
 	if token, ok := p.match(lexer.COLON); !ok {
@@ -217,7 +217,7 @@ func (p *Parser) ParseStatement() Statement {
 // 	assignment_stmt' -> expression ';'
 //   	| STATIC_CAST '(' type ')' '(' expression ')' ';
 func (p *Parser) ParseAssignmentStatement() *AssignmentStatement {
-	result := &AssignmentStatement{}
+	result := &AssignmentStatement{Position: p.lookahead.Position}
 
 	// ID
 	if token, ok := p.match(lexer.ID); ok {
@@ -267,7 +267,7 @@ func (p *Parser) ParseInputStatement() *InputStatement {
 		return nil
 	}
 
-	result := &InputStatement{}
+	result := &InputStatement{Position: p.lookahead.Position}
 
 	// (
 	if token, ok := p.match(lexer.LPAREN); !ok {
@@ -302,7 +302,7 @@ func (p *Parser) ParseOutputStatement() *OutputStatement {
 		return nil
 	}
 
-	result := &OutputStatement{}
+	result := &OutputStatement{Position: p.lookahead.Position}
 
 	// (
 	if token, ok := p.match(lexer.LPAREN); !ok {
@@ -331,7 +331,7 @@ func (p *Parser) ParseIfStatement() *IfStatement {
 		return nil
 	}
 
-	result := &IfStatement{}
+	result := &IfStatement{Position: p.lookahead.Position}
 
 	// (
 	if token, ok := p.match(lexer.LPAREN); !ok {
@@ -367,7 +367,7 @@ func (p *Parser) ParseWhileStatement() *WhileStatement {
 		return nil
 	}
 
-	result := &WhileStatement{}
+	result := &WhileStatement{Position: p.lookahead.Position}
 
 	// (
 	if token, ok := p.match(lexer.LPAREN); !ok {
@@ -393,7 +393,7 @@ func (p *Parser) ParseSwitchStatement() *SwitchStatement {
 		return nil
 	}
 
-	result := &SwitchStatement{}
+	result := &SwitchStatement{Position: p.lookahead.Position}
 
 	// (
 	if token, ok := p.match(lexer.LPAREN); !ok {
@@ -439,9 +439,8 @@ func (p *Parser) ParseSwitchStatement() *SwitchStatement {
 func (p *Parser) ParseSwitchCases() []SwitchCase {
 	cases := []SwitchCase{}
 	for p.lookahead.TokenType == lexer.CASE {
+		item := SwitchCase{Position: p.lookahead.Position}
 		p.match(lexer.CASE)
-
-		var item SwitchCase
 
 		// NUM
 		if token, ok := p.match(lexer.NUM); ok {
@@ -471,6 +470,7 @@ func (p *Parser) ParseSwitchCases() []SwitchCase {
 // ParseBreakStatement parses a CPL break statement.
 // 	break_stmt -> BREAK ';'
 func (p *Parser) ParseBreakStatement() *BreakStatement {
+	result := &BreakStatement{Position: p.lookahead.Position}
 	if _, ok := p.match(lexer.BREAK); !ok {
 		return nil
 	}
@@ -480,7 +480,7 @@ func (p *Parser) ParseBreakStatement() *BreakStatement {
 		p.addError(newParseError(token.Lexeme, []string{";"}, token.Position))
 	}
 
-	return &BreakStatement{}
+	return result
 }
 
 // ParseStatementsBlock parses a block of statements.
@@ -502,7 +502,7 @@ func (p *Parser) ParseStatementsBlock() *StatementsBlock {
 		p.addError(newParseError(token.Lexeme, []string{"}"}, token.Position))
 	}
 
-	return &StatementsBlock{Statements: statements}
+	return &StatementsBlock{Position: startBlockToken.Position, Statements: statements}
 }
 
 // ParseStatements parses zero or more statements.
@@ -527,8 +527,12 @@ func (p *Parser) ParseStatements() []Statement {
 func (p *Parser) ParseBooleanExpression() BooleanExpression {
 	result := p.ParseBooleanTerm()
 	for p.lookahead.TokenType == lexer.OR {
-		p.match(lexer.OR)
-		result = &OrBooleanExpression{LHS: result, RHS: p.ParseBooleanTerm()}
+		token, _ := p.match(lexer.OR)
+		result = &OrBooleanExpression{
+			Position: token.Position,
+			LHS:      result,
+			RHS:      p.ParseBooleanTerm(),
+		}
 	}
 
 	return result
@@ -540,8 +544,12 @@ func (p *Parser) ParseBooleanExpression() BooleanExpression {
 func (p *Parser) ParseBooleanTerm() BooleanExpression {
 	result := p.ParseBooleanFactor()
 	for p.lookahead.TokenType == lexer.AND {
-		p.match(lexer.AND)
-		result = &AndBooleanExpression{LHS: result, RHS: p.ParseBooleanFactor()}
+		token, _ := p.match(lexer.AND)
+		result = &AndBooleanExpression{
+			Position: token.Position,
+			LHS:      result,
+			RHS:      p.ParseBooleanFactor(),
+		}
 	}
 
 	return result
@@ -551,6 +559,7 @@ func (p *Parser) ParseBooleanTerm() BooleanExpression {
 // 	boolfactor -> NOT '(' boolexpr ')'
 //		| expression RELOP expression
 func (p *Parser) ParseBooleanFactor() BooleanExpression {
+	position := p.lookahead.Position
 	switch p.lookahead.TokenType {
 	case lexer.NOT:
 		p.match(lexer.NOT)
@@ -565,7 +574,7 @@ func (p *Parser) ParseBooleanFactor() BooleanExpression {
 			p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
 		}
 
-		return &NotBooleanExpression{Value: expr}
+		return &NotBooleanExpression{Position: position, Value: expr}
 
 	default:
 		lhs := p.ParseExpression()
@@ -590,7 +599,12 @@ func (p *Parser) ParseBooleanFactor() BooleanExpression {
 			p.addError(newParseError(token.Lexeme, []string{"==", "!=", "<", ">", "<=", ">="}, token.Position))
 		}
 
-		return &CompareBooleanExpression{LHS: lhs, Operator: operator, RHS: p.ParseExpression()}
+		return &CompareBooleanExpression{
+			Position: position,
+			LHS:      lhs,
+			Operator: operator,
+			RHS:      p.ParseExpression(),
+		}
 	}
 }
 
@@ -600,6 +614,8 @@ func (p *Parser) ParseBooleanFactor() BooleanExpression {
 func (p *Parser) ParseExpression() Expression {
 	result := p.ParseTerm()
 	for p.lookahead.TokenType == lexer.ADDOP {
+		position := p.lookahead.Position
+
 		var operator Operator
 		switch token, _ := p.match(lexer.ADDOP); token.Lexeme {
 		case "+":
@@ -609,7 +625,12 @@ func (p *Parser) ParseExpression() Expression {
 		}
 
 		rhs := p.ParseTerm()
-		result = &ArithmeticExpression{LHS: result, RHS: rhs, Operator: operator}
+		result = &ArithmeticExpression{
+			Position: position,
+			LHS:      result,
+			RHS:      rhs,
+			Operator: operator,
+		}
 	}
 
 	return result
@@ -621,6 +642,8 @@ func (p *Parser) ParseExpression() Expression {
 func (p *Parser) ParseTerm() Expression {
 	result := p.ParseFactor()
 	for p.lookahead.TokenType == lexer.MULOP {
+		position := p.lookahead.Position
+
 		var operator Operator
 		switch token, _ := p.match(lexer.MULOP); token.Lexeme {
 		case "*":
@@ -629,7 +652,12 @@ func (p *Parser) ParseTerm() Expression {
 			operator = Divide
 		}
 
-		result = &ArithmeticExpression{LHS: result, RHS: p.ParseFactor(), Operator: operator}
+		result = &ArithmeticExpression{
+			Position: position,
+			LHS:      result,
+			RHS:      p.ParseFactor(),
+			Operator: operator,
+		}
 	}
 
 	return result
@@ -652,7 +680,7 @@ func (p *Parser) ParseFactor() Expression {
 
 	case lexer.ID:
 		token, _ := p.match(lexer.ID)
-		return &VariableExpression{Variable: token.Lexeme}
+		return &VariableExpression{Position: token.Position, Variable: token.Lexeme}
 
 	case lexer.NUM:
 		token, _ := p.match(lexer.NUM)
@@ -664,7 +692,7 @@ func (p *Parser) ParseFactor() Expression {
 				p.addError(ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)})
 			}
 
-			return &FloatLiteral{Value: value}
+			return &FloatLiteral{Position: token.Position, Value: value}
 		}
 
 		// Otherwise, parse it as an integer.
@@ -673,7 +701,7 @@ func (p *Parser) ParseFactor() Expression {
 			p.addError(ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)})
 		}
 
-		return &IntLiteral{Value: value}
+		return &IntLiteral{Position: token.Position, Value: value}
 
 	default:
 		p.addError(newParseError(p.lookahead.Lexeme, []string{"(", "ID", "NUM"},
