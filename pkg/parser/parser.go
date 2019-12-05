@@ -76,7 +76,7 @@ func (p *Parser) match(tokenTypes ...lexer.TokenType) (*lexer.Token, bool) {
 	}
 
 	// Revert the lookahead to original one.
-	p.lookahead = nextRealToken // p.scanner.Scan()
+	p.lookahead = nextRealToken
 	return &nextRealToken, false
 }
 
@@ -89,7 +89,7 @@ func (p *Parser) ParseProgram() *Program {
 	program.Declarations = p.ParseDeclarations()
 
 	// Parse statements.
-	program.Statements = p.ParseStatementsBlock()
+	program.StatementsBlock = p.ParseStatementsBlock()
 
 	// Make sure there's an EOF at the end of the file.
 	if token, ok := p.match(lexer.EOF); !ok {
@@ -188,6 +188,21 @@ func (p *Parser) ParseStatement() Statement {
 
 	case lexer.OUTPUT:
 		return p.ParseOutputStatement()
+
+	case lexer.IF:
+		return p.ParseIfStatement()
+
+	case lexer.WHILE:
+		return p.ParseWhileStatement()
+
+	case lexer.SWITCH:
+		return p.ParseSwitchStatement()
+
+	case lexer.BREAK:
+		return p.ParseBreakStatement()
+
+	case lexer.LBRACKET:
+		return p.ParseStatementsBlock()
 	}
 
 	return nil
@@ -305,9 +320,168 @@ func (p *Parser) ParseOutputStatement() *OutputStatement {
 	return result
 }
 
+// ParseIfStatement parses a CPL if statement.
+// 	if_stmt -> IF '(' boolexpr ')' stmt ELSE stmt
+func (p *Parser) ParseIfStatement() *IfStatement {
+	if _, ok := p.match(lexer.IF); !ok {
+		return nil
+	}
+
+	result := &IfStatement{}
+
+	// (
+	if token, ok := p.match(lexer.LPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"("}, token.Position))
+	}
+
+	result.Condition = p.ParseBooleanExpression()
+
+	// )
+	if token, ok := p.match(lexer.RPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
+	}
+
+	// stmt
+	result.IfBranch = p.ParseStatement()
+
+	// ELSE
+	if token, ok := p.match(lexer.ELSE); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"else"}, token.Position))
+		return result
+	}
+
+	// stmt
+	result.ElseBranch = p.ParseStatement()
+
+	return result
+}
+
+// ParseWhileStatement parses a CPL if statement.
+// 	while_stmt -> WHILE '(' boolexpr ')' stmt
+func (p *Parser) ParseWhileStatement() *WhileStatement {
+	if _, ok := p.match(lexer.WHILE); !ok {
+		return nil
+	}
+
+	result := &WhileStatement{}
+
+	// (
+	if token, ok := p.match(lexer.LPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"("}, token.Position))
+	}
+
+	result.Condition = p.ParseBooleanExpression()
+
+	// )
+	if token, ok := p.match(lexer.RPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
+	}
+
+	// stmt
+	result.Body = p.ParseStatement()
+	return result
+}
+
+// ParseSwitchStatement parses a CPL switch statement.
+// 	switch_stmt -> SWITCH '(' expression ')' '{' caselist DEFAULT ':' stmtlist '}'
+func (p *Parser) ParseSwitchStatement() *SwitchStatement {
+	if _, ok := p.match(lexer.SWITCH); !ok {
+		return nil
+	}
+
+	result := &SwitchStatement{}
+
+	// (
+	if token, ok := p.match(lexer.LPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"("}, token.Position))
+	}
+
+	result.Expression = p.ParseExpression()
+
+	// )
+	if token, ok := p.match(lexer.RPAREN); !ok {
+		p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
+	}
+
+	// {
+	if token, ok := p.match(lexer.LBRACKET); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"{"}, token.Position))
+	}
+
+	result.Cases = p.ParseSwitchCases()
+
+	// DEFAULT
+	if token, ok := p.match(lexer.DEFAULT); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"DEFAULT"}, token.Position))
+	}
+
+	// :
+	if token, ok := p.match(lexer.COLON); !ok {
+		p.addError(newParseError(token.Lexeme, []string{":"}, token.Position))
+	}
+
+	result.DefaultCase = p.ParseStatements()
+
+	// }
+	if token, ok := p.match(lexer.RBRACKET); !ok {
+		p.addError(newParseError(token.Lexeme, []string{"}"}, token.Position))
+	}
+
+	return result
+}
+
+// ParseSwitchCases parses zero or more switch cases.
+//	CASE NUM ':' stmtlist caselist
+func (p *Parser) ParseSwitchCases() []SwitchCase {
+	cases := []SwitchCase{}
+	for p.lookahead.TokenType == lexer.CASE {
+		p.match(lexer.CASE)
+
+		var item SwitchCase
+
+		// NUM
+		if token, ok := p.match(lexer.NUM); ok {
+			value, err := strconv.ParseFloat(token.Lexeme, 64)
+			if err != nil {
+				p.addError(ParseError{Message: fmt.Sprintf("%s is not number", token.Lexeme)})
+			}
+
+			item.Value = value
+		} else {
+			p.addError(newParseError(token.Lexeme, []string{"NUM"}, token.Position))
+		}
+
+		// :
+		if token, ok := p.match(lexer.COLON); !ok {
+			p.addError(newParseError(token.Lexeme, []string{":"}, token.Position))
+		}
+
+		item.Statements = p.ParseStatements()
+
+		cases = append(cases, item)
+	}
+
+	return cases
+}
+
+// ParseBreakStatement parses a CPL break statement.
+// 	break_stmt -> BREAK ';'
+func (p *Parser) ParseBreakStatement() *BreakStatement {
+	if _, ok := p.match(lexer.BREAK); !ok {
+		return nil
+	}
+
+	// ;
+	if token, ok := p.match(lexer.SEMICOLON); !ok {
+		p.addError(newParseError(token.Lexeme, []string{";"}, token.Position))
+	}
+
+	return &BreakStatement{}
+}
+
 // ParseStatementsBlock parses a block of statements.
 //	stmt_block -> '{' stmtlist '}'
-func (p *Parser) ParseStatementsBlock() []Statement {
+func (p *Parser) ParseStatementsBlock() *StatementsBlock {
 	// Parse {
 	startBlock := false
 	startBlockToken, startBlock := p.match(lexer.LBRACKET)
@@ -324,7 +498,7 @@ func (p *Parser) ParseStatementsBlock() []Statement {
 		p.addError(newParseError(token.Lexeme, []string{"}"}, token.Position))
 	}
 
-	return statements
+	return &StatementsBlock{Statements: statements}
 }
 
 // ParseStatements parses zero or more statements.
@@ -343,7 +517,80 @@ func (p *Parser) ParseStatements() []Statement {
 	return statements
 }
 
-// ParseExpression parses expressions that might contain additions or subtractions.
+// ParseBooleanExpression parses expressions that might contain any boolean operator.
+// 	boolexpr -> boolterm boolexpr'
+// 	boolexpr' -> OR boolterm boolexpr | ε
+func (p *Parser) ParseBooleanExpression() BooleanExpression {
+	result := p.ParseBooleanTerm()
+	for p.lookahead.TokenType == lexer.OR {
+		p.match(lexer.OR)
+		result = &OrBooleanExpression{LHS: result, RHS: p.ParseBooleanTerm()}
+	}
+
+	return result
+}
+
+// ParseBooleanTerm parses expressions that might contain AND operator.
+// 	boolterm -> boolfactor boolterm'
+// 	boolterm' -> AND boolfactor boolterm' | ε
+func (p *Parser) ParseBooleanTerm() BooleanExpression {
+	result := p.ParseBooleanFactor()
+	for p.lookahead.TokenType == lexer.AND {
+		p.match(lexer.AND)
+		result = &AndBooleanExpression{LHS: result, RHS: p.ParseBooleanFactor()}
+	}
+
+	return result
+}
+
+// ParseBooleanFactor parses a boolean expression with NOT operator or a relational operator.
+// 	boolfactor -> NOT '(' boolexpr ')'
+//		| expression RELOP expression
+func (p *Parser) ParseBooleanFactor() BooleanExpression {
+	switch p.lookahead.TokenType {
+	case lexer.NOT:
+		p.match(lexer.NOT)
+
+		if token, ok := p.match(lexer.LPAREN); !ok {
+			p.addError(newParseError(token.Lexeme, []string{"("}, token.Position))
+		}
+
+		expr := p.ParseBooleanExpression()
+
+		if token, ok := p.match(lexer.RPAREN); !ok {
+			p.addError(newParseError(token.Lexeme, []string{")"}, token.Position))
+		}
+
+		return &NotBooleanExpression{Value: expr}
+
+	default:
+		lhs := p.ParseExpression()
+
+		var operator Operator
+		if token, ok := p.match(lexer.RELOP); ok {
+			switch token.Lexeme {
+			case "==":
+				operator = EqualTo
+			case "!=":
+				operator = NotEqualTo
+			case "<":
+				operator = LessThan
+			case ">":
+				operator = GreaterThan
+			case "<=":
+				operator = LessThenOrEqualTo
+			case ">=":
+				operator = GreaterThanOrEqualTo
+			}
+		} else {
+			p.addError(newParseError(token.Lexeme, []string{"==", "!=", "<", ">", "<=", ">="}, token.Position))
+		}
+
+		return &CompareBooleanExpression{LHS: lhs, Operator: operator, RHS: p.ParseExpression()}
+	}
+}
+
+// ParseExpression parses expressions that might contain any arthimatic operator.
 // 	expression -> term expression'
 //  expression' -> ADDOP term expression' | ε
 func (p *Parser) ParseExpression() Expression {

@@ -14,7 +14,9 @@ func TestEmptyProgram(t *testing.T) {
 	assert.Empty(t, errors)
 	assert.EqualValues(t, &parser.Program{
 		Declarations: []parser.Declaration{},
-		Statements:   []parser.Statement{},
+		StatementsBlock: &parser.StatementsBlock{
+			Statements: []parser.Statement{},
+		},
 	}, program)
 }
 
@@ -299,7 +301,9 @@ func TestErrorRecoveryOneToken(t *testing.T) {
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
 		},
-		Statements: []parser.Statement{},
+		StatementsBlock: &parser.StatementsBlock{
+			Statements: []parser.Statement{},
+		},
 	}, program)
 }
 
@@ -313,7 +317,9 @@ func TestErrorRecoveryMultipleTokens(t *testing.T) {
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
 		},
-		Statements: []parser.Statement{},
+		StatementsBlock: &parser.StatementsBlock{
+			Statements: []parser.Statement{},
+		},
 	}, program)
 }
 
@@ -329,7 +335,9 @@ func TestErrorRecoveryMultipleTokensAndDeclarations(t *testing.T) {
 			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
 			parser.Declaration{Names: []string{"var2"}, Type: parser.Float},
 		},
-		Statements: []parser.Statement{},
+		StatementsBlock: &parser.StatementsBlock{
+			Statements: []parser.Statement{},
+		},
 	}, program)
 }
 
@@ -342,7 +350,9 @@ func TestErrorRecoveryEOF(t *testing.T) {
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
 		},
-		Statements: []parser.Statement{},
+		StatementsBlock: &parser.StatementsBlock{
+			Statements: []parser.Statement{},
+		},
 	}, program)
 }
 
@@ -356,7 +366,9 @@ func TestErrorRecoveryTwiceWithEOF(t *testing.T) {
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"var1"}, Type: parser.Integer},
 		},
-		Statements: []parser.Statement{},
+		StatementsBlock: &parser.StatementsBlock{
+			Statements: []parser.Statement{},
+		},
 	}, program)
 }
 
@@ -367,21 +379,23 @@ func TestProgramWithAssignmentStatements(t *testing.T) {
 		Declarations: []parser.Declaration{
 			parser.Declaration{Names: []string{"x", "y"}, Type: parser.Integer},
 		},
-		Statements: []parser.Statement{
-			&parser.AssignmentStatement{Variable: "x", Value: &parser.ArithmeticExpression{
-				LHS:      &parser.NumberLiteral{Value: 5},
-				Operator: parser.Multiply,
-				RHS: &parser.ArithmeticExpression{
-					LHS:      &parser.VariableExpression{Variable: "y"},
+		StatementsBlock: &parser.StatementsBlock{
+			Statements: []parser.Statement{
+				&parser.AssignmentStatement{Variable: "x", Value: &parser.ArithmeticExpression{
+					LHS:      &parser.NumberLiteral{Value: 5},
+					Operator: parser.Multiply,
+					RHS: &parser.ArithmeticExpression{
+						LHS:      &parser.VariableExpression{Variable: "y"},
+						Operator: parser.Add,
+						RHS:      &parser.VariableExpression{Variable: "b"},
+					},
+				}},
+				&parser.AssignmentStatement{Variable: "y", Value: &parser.ArithmeticExpression{
+					LHS:      &parser.VariableExpression{Variable: "x"},
 					Operator: parser.Add,
-					RHS:      &parser.VariableExpression{Variable: "b"},
-				},
-			}},
-			&parser.AssignmentStatement{Variable: "y", Value: &parser.ArithmeticExpression{
-				LHS:      &parser.VariableExpression{Variable: "x"},
-				Operator: parser.Add,
-				RHS:      &parser.NumberLiteral{Value: 5},
-			}, CastType: parser.Float},
+					RHS:      &parser.NumberLiteral{Value: 5},
+				}, CastType: parser.Float},
+			},
 		},
 	}, program)
 }
@@ -403,4 +417,215 @@ func TestOutputStatement(t *testing.T) {
 			Operator: parser.Add,
 			RHS:      &parser.VariableExpression{Variable: "x"},
 		}}, statement)
+}
+
+func TestOrAndPrecedence(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("x <= 5 || y >= 6 && 3 == 4"))
+	expr := p.ParseBooleanExpression()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.OrBooleanExpression{
+		LHS: &parser.CompareBooleanExpression{
+			LHS:      &parser.VariableExpression{Variable: "x"},
+			Operator: parser.LessThenOrEqualTo,
+			RHS:      &parser.NumberLiteral{Value: 5},
+		},
+		RHS: &parser.AndBooleanExpression{
+			LHS: &parser.CompareBooleanExpression{
+				LHS:      &parser.VariableExpression{Variable: "y"},
+				Operator: parser.GreaterThanOrEqualTo,
+				RHS:      &parser.NumberLiteral{Value: 6},
+			},
+			RHS: &parser.CompareBooleanExpression{
+				LHS:      &parser.NumberLiteral{Value: 3},
+				Operator: parser.EqualTo,
+				RHS:      &parser.NumberLiteral{Value: 4},
+			},
+		},
+	}, expr)
+}
+
+func TestAndOrPrecedence(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("x != 5 && y < 6 || 3 == 4"))
+	expr := p.ParseBooleanExpression()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.OrBooleanExpression{
+		LHS: &parser.AndBooleanExpression{
+			LHS: &parser.CompareBooleanExpression{
+				LHS:      &parser.VariableExpression{Variable: "x"},
+				Operator: parser.NotEqualTo,
+				RHS:      &parser.NumberLiteral{Value: 5},
+			},
+			RHS: &parser.CompareBooleanExpression{
+				LHS:      &parser.VariableExpression{Variable: "y"},
+				Operator: parser.LessThan,
+				RHS:      &parser.NumberLiteral{Value: 6},
+			},
+		},
+		RHS: &parser.CompareBooleanExpression{
+			LHS:      &parser.NumberLiteral{Value: 3},
+			Operator: parser.EqualTo,
+			RHS:      &parser.NumberLiteral{Value: 4},
+		},
+	}, expr)
+}
+
+func TestNot(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("!(x > 5 && y < 6) || 3 == 4"))
+	expr := p.ParseBooleanExpression()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.OrBooleanExpression{
+		LHS: &parser.NotBooleanExpression{
+			Value: &parser.AndBooleanExpression{
+				LHS: &parser.CompareBooleanExpression{
+					LHS:      &parser.VariableExpression{Variable: "x"},
+					Operator: parser.GreaterThan,
+					RHS:      &parser.NumberLiteral{Value: 5},
+				},
+				RHS: &parser.CompareBooleanExpression{
+					LHS:      &parser.VariableExpression{Variable: "y"},
+					Operator: parser.LessThan,
+					RHS:      &parser.NumberLiteral{Value: 6},
+				},
+			},
+		},
+		RHS: &parser.CompareBooleanExpression{
+			LHS:      &parser.NumberLiteral{Value: 3},
+			Operator: parser.EqualTo,
+			RHS:      &parser.NumberLiteral{Value: 4},
+		},
+	}, expr)
+}
+
+func TestIfStatement(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("if (x == y) input(x); else output(y);"))
+	statement := p.ParseStatement()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.IfStatement{
+		Condition: &parser.CompareBooleanExpression{
+			LHS:      &parser.VariableExpression{Variable: "x"},
+			Operator: parser.EqualTo,
+			RHS:      &parser.VariableExpression{Variable: "y"},
+		},
+		IfBranch: &parser.InputStatement{Variable: "x"},
+		ElseBranch: &parser.OutputStatement{
+			Value: &parser.VariableExpression{Variable: "y"},
+		},
+	}, statement)
+}
+
+func TestElseIfStatement(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("if (x == y) { input(x); y = 7; } else if (x == 3) output(y); else t = 6;"))
+	statement := p.ParseStatement()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.IfStatement{
+		Condition: &parser.CompareBooleanExpression{
+			LHS:      &parser.VariableExpression{Variable: "x"},
+			Operator: parser.EqualTo,
+			RHS:      &parser.VariableExpression{Variable: "y"},
+		},
+		IfBranch: &parser.StatementsBlock{
+			Statements: []parser.Statement{
+				&parser.InputStatement{Variable: "x"},
+				&parser.AssignmentStatement{
+					Variable: "y",
+					Value:    &parser.NumberLiteral{Value: 7},
+				},
+			},
+		},
+		ElseBranch: &parser.IfStatement{
+			Condition: &parser.CompareBooleanExpression{
+				LHS:      &parser.VariableExpression{Variable: "x"},
+				Operator: parser.EqualTo,
+				RHS:      &parser.NumberLiteral{Value: 3},
+			},
+			IfBranch: &parser.OutputStatement{
+				Value: &parser.VariableExpression{Variable: "y"},
+			},
+			ElseBranch: &parser.AssignmentStatement{
+				Variable: "t",
+				Value:    &parser.NumberLiteral{Value: 6},
+			},
+		},
+	}, statement)
+}
+
+func TestWhileStatement(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("while (!(x == y)) { input(x); y = 7; }"))
+	statement := p.ParseStatement()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.WhileStatement{
+		Condition: &parser.NotBooleanExpression{
+			Value: &parser.CompareBooleanExpression{
+				LHS:      &parser.VariableExpression{Variable: "x"},
+				Operator: parser.EqualTo,
+				RHS:      &parser.VariableExpression{Variable: "y"},
+			},
+		},
+		Body: &parser.StatementsBlock{
+			Statements: []parser.Statement{
+				&parser.InputStatement{Variable: "x"},
+				&parser.AssignmentStatement{
+					Variable: "y",
+					Value:    &parser.NumberLiteral{Value: 7},
+				},
+			},
+		},
+	}, statement)
+}
+
+func TestBreakStatement(t *testing.T) {
+	p := parser.NewParser(strings.NewReader("break;"))
+	statement := p.ParseStatement()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.BreakStatement{}, statement)
+}
+
+func TestSwitchStatement(t *testing.T) {
+	p := parser.NewParser(strings.NewReader(`
+		switch (x + y) { 
+		case 5: 
+			output(x); 
+			break;
+		case 6: {
+			input(y);
+			break;
+		}
+		default: 
+			x = y; 
+			break;
+		}
+		`))
+
+	statement := p.ParseStatement()
+	assert.Empty(t, p.Errors)
+	assert.EqualValues(t, &parser.SwitchStatement{
+		Expression: &parser.ArithmeticExpression{
+			LHS:      &parser.VariableExpression{Variable: "x"},
+			Operator: parser.Add,
+			RHS:      &parser.VariableExpression{Variable: "y"},
+		},
+		Cases: []parser.SwitchCase{
+			parser.SwitchCase{
+				Value: 5,
+				Statements: []parser.Statement{
+					&parser.OutputStatement{Value: &parser.VariableExpression{Variable: "x"}},
+					&parser.BreakStatement{},
+				},
+			},
+			parser.SwitchCase{
+				Value: 6,
+				Statements: []parser.Statement{
+					&parser.StatementsBlock{Statements: []parser.Statement{
+						&parser.InputStatement{Variable: "y"},
+						&parser.BreakStatement{},
+					}},
+				},
+			},
+		},
+		DefaultCase: []parser.Statement{
+			&parser.AssignmentStatement{Variable: "x",
+				Value: &parser.VariableExpression{Variable: "y"}},
+			&parser.BreakStatement{},
+		},
+	}, statement)
 }

@@ -15,15 +15,18 @@ const (
 // Operator represents a boolean or arithmatic operator in CPL.
 type Operator int
 
+// Types of operators
 const (
-	// Add (+) two or more numbers
-	Add Operator = iota
-	// Subtract (-) two or more numbers
-	Subtract
-	// Multiply (*) two or more numbers
-	Multiply
-	// Divide (/) two or more numbers
-	Divide
+	Add                  Operator = iota // +
+	Subtract                             // -
+	Multiply                             // *
+	Divide                               // /
+	EqualTo                              // ==
+	NotEqualTo                           // !=
+	GreaterThan                          // >
+	LessThan                             // <
+	GreaterThanOrEqualTo                 // >=
+	LessThenOrEqualTo                    // <=
 )
 
 // Node represents a node in the CPL abstract syntax tree.
@@ -35,8 +38,8 @@ type Node interface {
 
 // Program represents the root node of a CPL program.
 type Program struct {
-	Declarations []Declaration
-	Statements   []Statement
+	Declarations    []Declaration
+	StatementsBlock *StatementsBlock
 }
 
 // Declaration of one or more variables.
@@ -76,6 +79,46 @@ type OutputStatement struct {
 	Value Expression
 }
 
+// IfStatement represents a conditional command. In CPL, if statements must contain an else clause!
+// e.g: if (x == y) { output(x); } else { output(y); }
+type IfStatement struct {
+	Condition  BooleanExpression
+	IfBranch   Statement
+	ElseBranch Statement
+}
+
+// WhileStatement is a control flow statement that allows code to be executed
+// repeatedly based on a given Boolean condition.
+type WhileStatement struct {
+	Condition BooleanExpression
+	Body      Statement
+}
+
+// SwitchStatement is a type of selection control mechanism used to allow the value of
+// a variable or expression to change the control flow of program execution.
+type SwitchStatement struct {
+	Expression  Expression
+	Cases       []SwitchCase
+	DefaultCase []Statement
+}
+
+// SwitchCase represents a flow for a specific value in a switch statement.
+type SwitchCase struct {
+	Value      float64
+	Statements []Statement
+}
+
+// BreakStatement represents a statement that exits from a switch case
+// or a while loop.
+type BreakStatement struct {
+}
+
+// StatementsBlock represents a block of sentences, e.g { s1; s2; s3; }.
+// It is itself a statement.
+type StatementsBlock struct {
+	Statements []Statement
+}
+
 // Expression is a combination of numbers, variables and operators that
 // can be evaluated to a value.
 type Expression interface {
@@ -83,6 +126,15 @@ type Expression interface {
 	// expression is unexported to ensure implementations of Expression
 	// can only originate in this package.
 	expression()
+}
+
+// BooleanExpression can be evaulated to a boolean value (true or false).
+// NOTE: In CPL, BooleanExpression isn't an Expression! These are two distinct types.
+type BooleanExpression interface {
+	Node
+	// boolexpr is unexported to ensure implementations of Expression
+	// can only originate in this package.
+	boolexpr()
 }
 
 // VariableExpression is an expression that contains a single variable.
@@ -102,19 +154,64 @@ type ArithmeticExpression struct {
 	RHS      Expression
 }
 
-func (*Program) node()              {}
-func (*Declaration) node()          {}
-func (*AssignmentStatement) node()  {}
-func (*InputStatement) node()       {}
-func (*OutputStatement) node()      {}
-func (*VariableExpression) node()   {}
-func (*NumberLiteral) node()        {}
-func (*ArithmeticExpression) node() {}
+// OrBooleanExpression is a boolean expression that has an OR operator.
+type OrBooleanExpression struct {
+	LHS BooleanExpression
+	RHS BooleanExpression
+}
+
+// AndBooleanExpression is a boolean expression that has an AND operator.
+type AndBooleanExpression struct {
+	LHS BooleanExpression
+	RHS BooleanExpression
+}
+
+// NotBooleanExpression is a boolean expression that has a NOT operator.
+type NotBooleanExpression struct {
+	Value BooleanExpression
+}
+
+// CompareBooleanExpression is a boolean expression that compares between two expressions,
+// e.g x < y
+type CompareBooleanExpression struct {
+	LHS      Expression
+	Operator Operator
+	RHS      Expression
+}
+
+func (*Program) node()                  {}
+func (*Declaration) node()              {}
+func (*AssignmentStatement) node()      {}
+func (*InputStatement) node()           {}
+func (*OutputStatement) node()          {}
+func (*IfStatement) node()              {}
+func (*WhileStatement) node()           {}
+func (*SwitchStatement) node()          {}
+func (*SwitchCase) node()               {}
+func (*BreakStatement) node()           {}
+func (*StatementsBlock) node()          {}
+func (*VariableExpression) node()       {}
+func (*NumberLiteral) node()            {}
+func (*ArithmeticExpression) node()     {}
+func (*OrBooleanExpression) node()      {}
+func (*AndBooleanExpression) node()     {}
+func (*NotBooleanExpression) node()     {}
+func (*CompareBooleanExpression) node() {}
 
 func (*AssignmentStatement) statement() {}
 func (*InputStatement) statement()      {}
 func (*OutputStatement) statement()     {}
+func (*IfStatement) statement()         {}
+func (*WhileStatement) statement()      {}
+func (*SwitchStatement) statement()     {}
+func (*BreakStatement) statement()      {}
+func (*StatementsBlock) statement()     {}
 
 func (*VariableExpression) expression()   {}
 func (*NumberLiteral) expression()        {}
 func (*ArithmeticExpression) expression() {}
+
+func (*OrBooleanExpression) boolexpr()      {}
+func (*AndBooleanExpression) boolexpr()     {}
+func (*NotBooleanExpression) boolexpr()     {}
+func (*CompareBooleanExpression) boolexpr() {}
