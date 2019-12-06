@@ -48,41 +48,11 @@ func (p *Parser) match(tokenTypes ...lexer.TokenType) (*lexer.Token, bool) {
 		return token, true
 	}
 
-	nextRealToken := p.lookahead
+	return &p.lookahead, false
+}
 
-	// If no such token was found, skip tokens until a correct one was found.
-	skips := 0
-	for {
-		token, ok := p.matchToken(tokenTypes...)
-		if ok {
-			// A token was found! Continue parsing from here.
-			expected := []string{}
-			for _, tokenType := range tokenTypes {
-				expected = append(expected, tokenType.String())
-			}
-			nextRealToken := p.scanner.Scan()
-			print(nextRealToken.TokenType.String(), " -- ", nextRealToken.Lexeme, "\n")
-			panic("LOL")
-
-			p.addError(newParseError(nextRealToken.Lexeme, expected, nextRealToken.Position))
-			return token, true
-		} else if token.TokenType == lexer.EOF {
-			break
-		}
-
-		// Skip token.
-		p.lookahead = p.scanner.Scan()
-		skips++
-	}
-
-	// We reached EOF and no token was found. Backtrack to the current token.
-	for i := 0; i < skips; i++ {
-		p.scanner.Unscan()
-	}
-
-	// Revert the lookahead to original one.
-	p.lookahead = nextRealToken
-	return &nextRealToken, false
+func (p *Parser) skip() {
+	p.lookahead = p.scanner.Scan()
 }
 
 // ParseProgram parses a CPL program and returns a Program AST object.
@@ -126,6 +96,9 @@ func (p *Parser) ParseDeclaration() *Declaration {
 	}
 
 	declaration.Type = p.ParseType()
+	if declaration.Type == Unknown {
+
+	}
 
 	if token, ok := p.match(lexer.SEMICOLON); !ok {
 		p.addError(newParseError(token.Lexeme, []string{";"}, token.Position))
@@ -139,6 +112,7 @@ func (p *Parser) ParseDeclaration() *Declaration {
 func (p *Parser) ParseType() DataType {
 	token, ok := p.match(lexer.INT, lexer.FLOAT)
 	if !ok {
+		p.skip()
 		p.addError(newParseError(token.Lexeme, []string{"int", "float"}, token.Position))
 		return Unknown
 	}

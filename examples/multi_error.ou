@@ -3,6 +3,9 @@ x, y : int;
 {
   input(x);
 
+  if (x == 6) {
+    output(6);
+  }
   switch (x) {
     case 6:
       output(6);
@@ -16,6 +19,9 @@ x, y : int;
     default:
       output(0);
       break;
+  }
+  if (x == 6) {
+    output(6);
   }
   output(999);
 }
